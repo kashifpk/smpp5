@@ -12,7 +12,7 @@ def hex_convert(string, line_width=80):
         if (len(hex_str) - hex_str.count("\n")) % line_width < 3:
             hex_str += "\n"
 
-    return hex_str
+    return hex_str.upper()
 
 
 def hex_print(string, line_width=80):

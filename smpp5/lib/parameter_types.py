@@ -51,3 +51,42 @@ class Integer(object):
             return Integer(v, l)
         else:
             raise RuntimeError("Invalid size/value for integer type")
+
+
+class CString(object):
+    "A null terminated string"
+
+    value = None
+    length = 0
+
+    def __init__(self, value=None):
+        self.value = value
+        self.length = len(value)
+
+    def encode(self):
+        return self.value + '\x00'
+
+    @classmethod
+    def decode(cls, string):
+        if string.endswith('\x00'):
+            return CString(string[:-1])
+        else:
+            raise RuntimeError("Invalid CString value")
+
+
+class String(object):
+    "A null terminated string"
+
+    value = None
+    length = 0
+
+    def __init__(self, value=None):
+        self.value = value
+        self.length = len(value)
+
+    def encode(self):
+        return self.value
+
+    @classmethod
+    def decode(cls, string):
+        return CString(string)
