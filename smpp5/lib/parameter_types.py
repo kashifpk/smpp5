@@ -7,6 +7,7 @@ classes for encoding and decoding these parameter types
 """
 
 import struct
+import types
 
 
 class Integer(object):
@@ -75,7 +76,7 @@ class CString(object):
 
 
 class String(object):
-    "A null terminated string"
+    "A normal string"
 
     value = None
     length = 0
@@ -89,4 +90,32 @@ class String(object):
 
     @classmethod
     def decode(cls, string):
-        return CString(string)
+        return String(string)
+
+
+class TLV(object):
+    "Tag-Length-Value paramter type"
+
+    tag = None
+    length = None
+    value = None
+
+    def __init__(self, tag, value):
+        self.tag = Integer(tag, 2)
+
+        if types.IntType == type(value):
+            value = chr(value)
+
+        self.value = String(value)
+        self.length = Integer(self.value.length, 2)
+
+    def encode(self):
+        return self.tag.encode() + self.length.encode() + self.value.encode()
+
+    @classmethod
+    def decode(cls, string):
+        tag = struct.unpack('>H', string[:2])[0]
+        length = struct.unpack('>H', string[2:4])[0]
+        value = string[4:4+length]
+        tlv = TLV(tag, value)
+        return tlv

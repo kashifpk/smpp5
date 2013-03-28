@@ -1,5 +1,5 @@
 from smpp5.lib.util.hex_print import hex_convert, hex_print
-from smpp5.lib.parameter_types import Integer, CString, String
+from smpp5.lib.parameter_types import Integer, CString, String, TLV
 
 
 def test_01_integer_encode():
@@ -44,3 +44,19 @@ def test_06_string_decode():
     "Test to check CString decoding"
 
     assert "Hello" == String.decode('Hello').value
+
+
+def test_07_tlv_encode():
+    "Test to check TLV encoding"
+
+    assert '00 07 00 01 04 ' == hex_convert(TLV(0x0007, 0x04).encode())
+    assert 1 == TLV(0x0007, 0x04).length.value
+
+
+def test_08_tlv_decode():
+    "Test to check TLV decoding"
+
+    tlv = TLV.decode('\x00\x07\x00\x01\x04')
+    assert 7 == tlv.tag.value
+    assert 1 == tlv.length.value
+    assert 4 == ord(tlv.value.value)
