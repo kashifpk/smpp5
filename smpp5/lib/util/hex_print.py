@@ -7,8 +7,13 @@ def hex_convert(string, line_width=80):
     "Given a string returns each byte's hexadecimal representation separated by a single space."
 
     hex_str = ""
+
+    if str == type(string):
+        string = string.encode(encoding="ascii")
+
     for ch in string:
-        hex_str += hex(ord(ch))[2:].zfill(2) + " "
+        # hex_str += hex(ord(ch))[2:].zfill(2) + " "   # python 2.x compatible version
+        hex_str += hex(ch)[2:].zfill(2) + " "
         if (len(hex_str) - hex_str.count("\n")) % line_width < 3:
             hex_str += "\n"
 

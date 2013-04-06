@@ -7,7 +7,6 @@ classes for encoding and decoding these parameter types
 """
 
 import struct
-import types
 
 
 class Integer(object):
@@ -38,6 +37,10 @@ class Integer(object):
 
         l = None
         v = None
+
+        if str == type(string):
+            string = string.encode(encoding="ascii")
+
         if 1 == len(string):
             l = 1
             v = struct.unpack('>B', string)[0]
@@ -62,14 +65,17 @@ class CString(object):
 
     def __init__(self, value=None):
         self.value = value
-        self.length = len(value)
+        self.length = len(value) + 1
 
     def encode(self):
-        return self.value + '\x00'
+        return str(self.value).encode(encoding='ascii') + b'\x00'
 
     @classmethod
     def decode(cls, string):
-        if string.endswith('\x00'):
+        if str == type(string):
+            string = string.encode(encoding='ascii')
+
+        if string.endswith(b'\x00'):
             return CString(string[:-1])
         else:
             raise RuntimeError("Invalid CString value")
@@ -86,10 +92,13 @@ class String(object):
         self.length = len(value)
 
     def encode(self):
-        return self.value
+        return str(self.value).encode(encoding='ascii')
 
     @classmethod
     def decode(cls, string):
+        if str == type(string):
+            string = string.encode(encoding='ascii')
+
         return String(string)
 
 
@@ -103,7 +112,7 @@ class TLV(object):
     def __init__(self, tag, value):
         self.tag = Integer(tag, 2)
 
-        if types.IntType == type(value):
+        if int == type(value):
             value = chr(value)
 
         self.value = String(value)

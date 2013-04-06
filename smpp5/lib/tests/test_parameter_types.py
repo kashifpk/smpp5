@@ -13,9 +13,9 @@ def test_01_integer_encode():
 def test_02_integer_decode():
     "Test to check 1, 2 and 4 byte integer decoding"
 
-    assert 5 == Integer.decode('\x05').value
-    assert 41746 == Integer.decode('\xa3\x12').value
-    assert 31022623 == Integer.decode('\x01\xd9^\x1f').value
+    assert 5 == Integer.decode(b'\x05').value
+    assert 41746 == Integer.decode(b'\xa3\x12').value
+    assert 31022623 == Integer.decode(b'\x01\xd9^\x1f').value
 
 
 def test_03_cstring_encode():
@@ -29,21 +29,21 @@ def test_03_cstring_encode():
 def test_04_cstring_decode():
     "Test to check CString decoding"
 
-    assert "Hello" == CString.decode('Hello\x00').value
-    assert "123456789" == CString.decode('123456789\x00').value
-    assert "A2F5ED278FC" == CString.decode('A2F5ED278FC\x00').value
+    assert b"Hello" == CString.decode(b'Hello\x00').value
+    assert b"123456789" == CString.decode(b'123456789\x00').value
+    assert b"A2F5ED278FC" == CString.decode(b'A2F5ED278FC\x00').value
 
 
 def test_05_string_encode():
     "Test to check CString encoding"
 
-    assert "Hello" == String("Hello").encode()
+    assert b"Hello" == String("Hello").encode()
 
 
 def test_06_string_decode():
     "Test to check CString decoding"
 
-    assert "Hello" == String.decode('Hello').value
+    assert b"Hello" == String.decode('Hello').value
 
 
 def test_07_tlv_encode():
@@ -56,7 +56,7 @@ def test_07_tlv_encode():
 def test_08_tlv_decode():
     "Test to check TLV decoding"
 
-    tlv = TLV.decode('\x00\x07\x00\x01\x04')
+    tlv = TLV.decode(b'\x00\x07\x00\x01\x04')
     assert 7 == tlv.tag.value
     assert 1 == tlv.length.value
     assert 4 == ord(tlv.value.value)
