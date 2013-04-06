@@ -9,7 +9,9 @@ def hex_convert(string, line_width=80):
     hex_str = ""
 
     if str == type(string):
-        string = string.encode(encoding="ascii")
+        #string = string.encode(encoding="ascii")
+        string = bytes(string, encoding="ascii")
+        print(type(string))
 
     for ch in string:
         # hex_str += hex(ord(ch))[2:].zfill(2) + " "   # python 2.x compatible version

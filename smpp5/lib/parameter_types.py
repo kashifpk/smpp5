@@ -64,11 +64,14 @@ class CString(object):
     length = 0
 
     def __init__(self, value=None):
+        if str == type(value):
+            value = value.encode(encoding='ascii')
+
         self.value = value
         self.length = len(value) + 1
 
     def encode(self):
-        return str(self.value).encode(encoding='ascii') + b'\x00'
+        return self.value + b'\x00'
 
     @classmethod
     def decode(cls, string):
@@ -88,11 +91,14 @@ class String(object):
     length = 0
 
     def __init__(self, value=None):
+        if str == type(value):
+            value = value.encode(encoding='ascii')
+
         self.value = value
         self.length = len(value)
 
     def encode(self):
-        return str(self.value).encode(encoding='ascii')
+        return self.value
 
     @classmethod
     def decode(cls, string):

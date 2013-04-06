@@ -21,9 +21,9 @@ def test_02_integer_decode():
 def test_03_cstring_encode():
     "Test to check CString encoding"
 
-    assert '48 65 6C 6C 6F 00 ' == hex_convert(CString("Hello").encode())
-    assert '31 32 33 34 35 36 37 38 39 00 ' == hex_convert(CString("123456789").encode())
-    assert '41 32 46 35 45 44 32 37 38 46 43 00 ' == hex_convert(CString("A2F5ED278FC").encode())
+    assert '48 65 6C 6C 6F 00 ' == hex_convert(CString(b"Hello").encode())
+    assert '31 32 33 34 35 36 37 38 39 00 ' == hex_convert(CString(b"123456789").encode())
+    assert '41 32 46 35 45 44 32 37 38 46 43 00 ' == hex_convert(CString(b"A2F5ED278FC").encode())
 
 
 def test_04_cstring_decode():
@@ -37,13 +37,13 @@ def test_04_cstring_decode():
 def test_05_string_encode():
     "Test to check CString encoding"
 
-    assert b"Hello" == String("Hello").encode()
+    assert b"Hello" == String(b"Hello").encode()
 
 
 def test_06_string_decode():
     "Test to check CString decoding"
 
-    assert b"Hello" == String.decode('Hello').value
+    assert b"Hello" == String.decode(b'Hello').value
 
 
 def test_07_tlv_encode():
