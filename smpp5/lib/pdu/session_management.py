@@ -8,9 +8,9 @@ class BindTransmitter(PDU):
     "Bind Transmitter PDU type"
 
     command_id = Integer(2, 4)
-    system_id = CString("SMPP3TEST")
-    password = CString("secret08")
-    system_type = CString("SUBMIT1")
+    system_id = CString("")
+    password = CString("")
+    system_type = CString("")
     interface_version = Integer(IV.SMPP_VERSION_5, 1)
     addr_ton = Integer(TON.INTERNATIONAL, 1)
     addr_npi = Integer(NPI.ISDN, 1)

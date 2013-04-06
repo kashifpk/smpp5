@@ -51,7 +51,7 @@ class Integer(object):
             l = 4
             v = struct.unpack('>L', string)[0]
 
-        if l and v:
+        if l and v is not None:
             return Integer(v, l)
         else:
             raise RuntimeError("Invalid size/value for integer type")
@@ -128,9 +128,9 @@ class TLV(object):
         return self.tag.encode() + self.length.encode() + self.value.encode()
 
     @classmethod
-    def decode(cls, string):
-        tag = struct.unpack('>H', string[:2])[0]
-        length = struct.unpack('>H', string[2:4])[0]
-        value = string[4:4+length]
+    def decode(cls, data):
+        tag = struct.unpack('>H', data[:2])[0]
+        length = struct.unpack('>H', data[2:4])[0]
+        value = data[4:4+length]
         tlv = TLV(tag, value)
         return tlv

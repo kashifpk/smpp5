@@ -71,6 +71,33 @@ class PDU(metaclass=OrderedMeta):
         return encoded_data
 
     @classmethod
-    def decode(cls, string):
-        "Decodes the PDU from the given string"
-        pass
+    def decode(cls, data):
+        "Decodes the PDU from the given data bytes"
+
+        new_pdu = cls()
+        idx = 0
+        for member in cls._orderedKeys:
+            if not member.startswith("__") and not callable(getattr(cls, member)):
+                M = getattr(cls, member)
+                if Integer == type(M):  # in [Integer, CString, String, TLV]
+                    s = data[idx:idx+M.length]
+                    idx = idx + M.length
+                    setattr(new_pdu, member, Integer.decode(s))
+                elif CString == type(M):
+                    # Need to find the next NULL character which is the string's end
+                    try:
+                        nidx = data.index(b'\x00', idx)
+                        s = data[idx:nidx+1]
+                        idx = nidx + 1
+                        setattr(new_pdu, member, CString.decode(s))
+                    except:
+                        raise RuntimeError("Cannot find end for CString type")
+                elif String == type(M):
+                    # TODO: Since string fields can either be fixed length or have a corresponding
+                    # length field specifying their length, decoding this requires some info to
+                    # be passed from within the PDU class.
+                    pass
+                elif TLV == type(M):
+                    pass
+
+        return new_pdu

@@ -11,4 +11,5 @@ def test_01_pdu_encode():
 
 def test_02_pdu_decode():
     "Test PDU decoding"
-    pass
+    P = PDU.decode(b'\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
+    assert '00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 01 ' == hex_convert(P.encode())
