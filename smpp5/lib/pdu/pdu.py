@@ -14,7 +14,7 @@ from collections import OrderedDict
 class OrderedMeta(type):
     @classmethod
     def __prepare__(metacls, name, bases):
-        return OrderedDict()
+        return OrderedDict()                # OrderedDict tracks the insertion order
 
     def __new__(cls, name, bases, clsdict):
         c = type.__new__(cls, name, bases, clsdict)
