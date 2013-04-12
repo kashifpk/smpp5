@@ -11,10 +11,11 @@ from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from collections import OrderedDict
 
 
-class OrderedMeta(type):
+class OrderedMeta(type):    
+    '''OrderedDict tracks the insertion order'''
     @classmethod
     def __prepare__(metacls, name, bases):
-        return OrderedDict()                # OrderedDict tracks the insertion order
+        return OrderedDict()                # returns OrderedDict in the order of insertion
 
     def __new__(cls, name, bases, clsdict):
         c = type.__new__(cls, name, bases, clsdict)
