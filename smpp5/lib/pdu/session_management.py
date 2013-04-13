@@ -3,18 +3,32 @@ from smpp5.lib.pdu.pdu import PDU
 from smpp5.lib.constants import interface_version as IV
 from smpp5.lib.constants import NPI, TON
 
+'''Session Management Operations
+These operations are used to establish and maintain a SMPP session.
+
+Bind Operation
+The purpose of the SMPP bind operation is to register an instance of an ESME with the MC
+system and request a SMPP session over this network connection for the submission or
+delivery of messages. Thus, the Bind operation may be viewed as a form of MC login request
+to authenticate the ESME entity wishing to establish a connection.
+
+An ESME may bind to the MC as a Transmitter (called ESME
+Transmitter), a Receiver (called ESME Receiver), or a Transceiver (called ESME
+Transceiver). There are three SMPP bind PDUs to support the various modes of operation,
+namely bind_transmitter, bind_transceiver and bind_receiver. The command_id field setting
+specifies which PDU is being used.'''
 
 class BindTransmitter(PDU):
     "Bind Transmitter PDU type"
 
     command_id = Integer(2, 4)
-    system_id = CString("")
-    password = CString("")
-    system_type = CString("")
-    interface_version = Integer(IV.SMPP_VERSION_5, 1)
-    addr_ton = Integer(TON.INTERNATIONAL, 1)
-    addr_npi = Integer(NPI.ISDN, 1)
-    address_range = CString('')
+    system_id = CString("")        # Identifies the ESME system requesting to bind as a transmitter with the MC.
+    password = CString("")         # The password may be used by the MC to authenticate the ESME requesting to bind.
+    system_type = CString("")      # Identifies the type of ESME system requesting to bind as a transmitter with the MC.
+    interface_version = Integer(IV.SMPP_VERSION_5, 1)  # Indicates the version of the SMPP protocol supported by the ESME.
+    addr_ton = Integer(TON.INTERNATIONAL, 1)  # Indicates Type of Number of the ESME address. If not known set to NULL.
+    addr_npi = Integer(NPI.ISDN, 1) # Numbering Plan Indicator for ESME address. If not known set to NULL.
+    address_range = CString('')     # Numbering Plan Indicator for ESME address. If not known set to NULL.
 
 class bind_transmitter_resp(PDU):
     "The SMPP bind_transmitter_resp PDU is used to reply to a bind_transmitter request"
