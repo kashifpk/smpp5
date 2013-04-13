@@ -146,3 +146,16 @@ class alert_notification(PDU):
     esme_addr_ton = Integer(0, 1)   # Type of Number for ESME address which requested the alert
     esme_addr_npi = Integer(0, 1)   # Numbering Plan Indicator for ESME address which requested the alert
     esme_addr = CString("")         # Address for ESME which requested the alert
+    ms_availability_status = TLV    # The status of the mobile station
+    
+'''Generic NACK Operation
+The generic_nack PDU is used to acknowledge the submission of an unrecognized or
+corrupt PDU.'''
+
+class generic_nack(PDU):
+    "SMPP generic_nack PDU type"
+    
+    command_id = Integer(102, 4)
+    command_status = Integer(0, 4)  # Error code corresponding to reason for sending the generic_nack.
+    sequence_number = Integer(0, 4) # Set to sequence number of original PDU or to NULL if the original PDU cannot be decoded.
+    
