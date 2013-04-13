@@ -136,3 +136,13 @@ Note: There is no associated alert_notification_resp PDU.'''
 
 class alert_notification(PDU):
     '''SMPP alert_notification PDU type'''
+    
+    command_id = Integer(102, 4)
+    command_status = Integer(0, 4)  
+    sequence_number = Integer(0, 4) # Set to a unique sequence number.
+    source_addr_ton = Integer(0, 1) # Type of Number for alert SME.
+    source_addr_npi = Integer(0, 1) # Numbering Plan Indicator for alert SME.
+    source_addr = CString("")       # Address of alert SME.
+    esme_addr_ton = Integer(0, 1)   # Type of Number for ESME address which requested the alert
+    esme_addr_npi = Integer(0, 1)   # Numbering Plan Indicator for ESME address which requested the alert
+    esme_addr = CString("")         # Address for ESME which requested the alert
