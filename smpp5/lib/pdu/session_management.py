@@ -138,7 +138,7 @@ class alert_notification(PDU):
     esme_addr_ton = Integer(0, 1)   # Type of Number for ESME address which requested the alert
     esme_addr_npi = Integer(0, 1)   # Numbering Plan Indicator for ESME address which requested the alert
     esme_addr = CString("")         # Address for ESME which requested the alert
-    ms_availability_status = TLV    # The status of the mobile station
+    ms_availability_status = TLV(tlv_tag.ms_availability_status)    # The status of the mobile station
     
 '''Generic NACK Operation
 The generic_nack PDU is used to acknowledge the submission of an unrecognized or
