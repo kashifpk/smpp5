@@ -34,8 +34,6 @@ class bind_transmitter_resp(PDU):
     "The SMPP bind_transmitter_resp PDU is used to reply to a bind_transmitter request"
     
     command_id = Integer(2, 4)
-    command_status = Integer(0, 4)  # Indicates status (success or error code) of original bind_transmitter request.
-    sequence_number = Integer(0, 4) # Set to sequence number of original bind_transmitter request.
     system_id = CString("")         # Message Center(MC) identifier.Identifies the MC to the ESME.
     sc_interface_version = Integer(IV.SMPP_VERSION_5, 1) # sc_interface_version
     
@@ -43,8 +41,6 @@ class bind_receiver(PDU):
     "SMPP bind_receiver PDU type"
     
     command_id = Integer(2, 4)
-    command_status = Integer(0, 4)  # Indicates status (success or error code) of original bind_transmitter request.
-    sequence_number = Integer(0, 4) # Set to a unique sequence number. The associated bind_receiver_resp PDU will echo the same sequence number.
     system_id = CString("")         # Identifies the ESME system requesting to bind as a receiver with the MC.
     password = CString("")          # The password may be used by the MC for security reasons to authenticate the ESME requesting to bind.
     system_type = CString("")       # Identifies the type of ESME system requesting to bind as a receiver with the MC
@@ -57,8 +53,6 @@ class bind_receiver_resp(PDU):
     "SMPP bind_receiver_resp PDU type"
     
     command_id = Integer(2, 4)
-    command_status = Integer(0, 4)  # Indicates status (success or error code) of original bind_receiver request.
-    sequence_number = Integer(0, 4) # Set to sequence number of original bind_receiver request.
     system_id = CString("")         # Message Center(MC) identifier.Identifies the MC to the ESME.
     sc_interface_version = Integer(IV.SMPP_VERSION_5, 1) # SMPP version supported by MC
     
@@ -66,8 +60,6 @@ class bind_transceiver(PDU):
     "SMPP bind_transceiver PDU type"
     
     command_id = Integer(9, 4)
-    command_status = Integer(0, 4)  # Indicates status (success or error code) of original bind_receiver request.
-    sequence_number = Integer(0, 4) # Set to a unique sequence number.The associated bind_transceiver_resp PDU will echo the same sequence number.
     system_id = CString("")         # Identifies the ESME system requesting to bind as a transceiver with the MC.
     password = CString("")          # The password may be used by the MC to authenticate the ESME requesting to bind.
     system_type = CString("")       # Identifies the type of ESME system requesting to bind as a transceiver with the MC.
@@ -80,8 +72,6 @@ class bind_transceiver_resp(PDU):
     "SMPP bind_transceiver_resp type"
     
     command_id = Integer(9, 4)
-    command_status = Integer(0, 4)  # Indicates status (success or error code) of original bind_transceiver request.
-    sequence_number = Integer(0, 4) # Set to sequence number of original bind_transceiver request.
     system_id = CString("")         # MC identifier. Identifies the MC to the ESME.
     interface_version = Integer(IV.SMPP_VERSION_5, 1) # Identifies the version of the SMPP protocol supported by the ESME.
     
@@ -90,8 +80,6 @@ class outbind(PDU):
     This operation is used by the MC to signal an ESME to originate a outbind request to the MC.'''
     
     command_id = Integer(11, 4)
-    command_status = Integer(0, 4)  
-    sequence_number = Integer(0, 4) # Set to a unique sequence number.
     system_id = CString("")         # MC identifier. Identifies the MC to the ESME.
     password = CString("")          # The password may be used by the ESME for security reasons to authenticate the MC originating the outbind.
     
@@ -104,8 +92,6 @@ class unbind(PDU):
     current SMPP session.'''
 
     command_id = Integer(6, 4)
-    command_status = Integer(0, 4)  
-    sequence_number = Integer(0, 4) # Set to a unique sequence number.The associated unbind_resp PDU will echo the same sequence number.
     
 class unbind_resp(PDU):
     '''SMPP unbind_resp PDU type
@@ -113,8 +99,6 @@ class unbind_resp(PDU):
     message header only.'''
     
     command_id = Integer(6, 4)
-    command_status = Integer(0, 4)  # Indicates outcome of original unbind request.
-    sequence_number = Integer(0, 4) # Set to sequence number of original unbind request.
     
 '''Enquire Link Operation
 This PDU can be originated by either the ESME or MC and is used to provide a confidencecheck
@@ -128,15 +112,11 @@ class enquire_link(PDU):
     of the communication path between an ESME and a MC.'''
     
     command_id = Integer(15, 4)
-    command_status = Integer(0, 4)  
-    sequence_number = Integer(0, 4) # Set to a unique sequence number. The associated enquire_link_resp PDU should echo the same sequence number
     
 class enquire_link_resp(PDU):
     '''The enquire_link_resp PDU is used to reply to an enquire_link request.'''
     
     command_id = Integer(15, 4)
-    command_status = Integer(0, 4)  
-    sequence_number = Integer(0, 4) # Set to the same sequence number of original enquire_link PDU
     
 '''Alert Notification Operation
 The alert_notification PDU is sent by the MC to the ESME across a Receiver or Transceiver
@@ -152,8 +132,6 @@ class alert_notification(PDU):
     '''SMPP alert_notification PDU type'''
     
     command_id = Integer(102, 4)
-    command_status = Integer(0, 4)  
-    sequence_number = Integer(0, 4) # Set to a unique sequence number.
     source_addr_ton = Integer(0, 1) # Type of Number for alert SME.
     source_addr_npi = Integer(0, 1) # Numbering Plan Indicator for alert SME.
     source_addr = CString("")       # Address of alert SME.
@@ -170,6 +148,4 @@ class generic_nack(PDU):
     "SMPP generic_nack PDU type"
     
     command_id = Integer(102, 4)
-    command_status = Integer(0, 4)  # Error code corresponding to reason for sending the generic_nack.
-    sequence_number = Integer(0, 4) # Set to sequence number of original PDU or to NULL if the original PDU cannot be decoded.
     
