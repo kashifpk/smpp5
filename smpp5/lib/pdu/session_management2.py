@@ -19,7 +19,7 @@ class BindTransmitter(PDU):
 class BindTransmitterResp(PDU):
     "Bind Transmitter Response PDU type"
 
-    command_id = Integer(2147483650, 4)
+    command_id = Integer(command_id.bind_transmitter_resp, 4)
     system_id = CString("")
     interface_version = Integer(IV.SMPP_VERSION_5, 1)
     
