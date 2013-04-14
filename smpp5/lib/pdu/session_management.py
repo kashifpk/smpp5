@@ -1,7 +1,7 @@
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.pdu.pdu import PDU
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.constants import NPI, TON
+from smpp5.lib.constants import *
 
 '''Session Management Operations
 These operations are used to establish and maintain a SMPP session.
@@ -21,7 +21,7 @@ specifies which PDU is being used.'''
 class BindTransmitter(PDU):
     "Bind Transmitter PDU type"
 
-    command_id = Integer(2, 4)
+    command_id = Integer(command_id.bind_transmitter, 4)
     system_id = CString("")        # Identifies the ESME system requesting to bind as a transmitter with the MC.
     password = CString("")         # The password may be used by the MC to authenticate the ESME requesting to bind.
     system_type = CString("")      # Identifies the type of ESME system requesting to bind as a transmitter with the MC.
@@ -33,14 +33,14 @@ class BindTransmitter(PDU):
 class bind_transmitter_resp(PDU):
     "The SMPP bind_transmitter_resp PDU is used to reply to a bind_transmitter request"
     
-    command_id = Integer(2, 4)
+    command_id = Integer(command_id.bind_transmitter_resp, 4)
     system_id = CString("")         # Message Center(MC) identifier.Identifies the MC to the ESME.
     sc_interface_version = Integer(IV.SMPP_VERSION_5, 1) # sc_interface_version
     
 class bind_receiver(PDU):
     "SMPP bind_receiver PDU type"
     
-    command_id = Integer(2, 4)
+    command_id = Integer(command_id.bind_receiver, 4)
     system_id = CString("")         # Identifies the ESME system requesting to bind as a receiver with the MC.
     password = CString("")          # The password may be used by the MC for security reasons to authenticate the ESME requesting to bind.
     system_type = CString("")       # Identifies the type of ESME system requesting to bind as a receiver with the MC
@@ -52,14 +52,14 @@ class bind_receiver(PDU):
 class bind_receiver_resp(PDU):
     "SMPP bind_receiver_resp PDU type"
     
-    command_id = Integer(2, 4)
+    command_id = Integer(command_id.bind_receiver_resp, 4)
     system_id = CString("")         # Message Center(MC) identifier.Identifies the MC to the ESME.
     sc_interface_version = Integer(IV.SMPP_VERSION_5, 1) # SMPP version supported by MC
     
 class bind_transceiver(PDU):
     "SMPP bind_transceiver PDU type"
     
-    command_id = Integer(9, 4)
+    command_id = Integer(command_id.bind_transceiver, 4)
     system_id = CString("")         # Identifies the ESME system requesting to bind as a transceiver with the MC.
     password = CString("")          # The password may be used by the MC to authenticate the ESME requesting to bind.
     system_type = CString("")       # Identifies the type of ESME system requesting to bind as a transceiver with the MC.
@@ -71,7 +71,7 @@ class bind_transceiver(PDU):
 class bind_transceiver_resp(PDU):
     "SMPP bind_transceiver_resp type"
     
-    command_id = Integer(9, 4)
+    command_id = Integer(command_id.bind_transceiver_resp, 4)
     system_id = CString("")         # MC identifier. Identifies the MC to the ESME.
     interface_version = Integer(IV.SMPP_VERSION_5, 1) # Identifies the version of the SMPP protocol supported by the ESME.
     
@@ -79,7 +79,7 @@ class outbind(PDU):
     '''SMPP outbind PDU type
     This operation is used by the MC to signal an ESME to originate a outbind request to the MC.'''
     
-    command_id = Integer(11, 4)
+    command_id = Integer(command_id.outbind, 4)
     system_id = CString("")         # MC identifier. Identifies the MC to the ESME.
     password = CString("")          # The password may be used by the ESME for security reasons to authenticate the MC originating the outbind.
     
@@ -91,14 +91,14 @@ class unbind(PDU):
     Thus, the unbind operation may be viewed as a form of MC logoff request to close the
     current SMPP session.'''
 
-    command_id = Integer(6, 4)
+    command_id = Integer(command_id.unbind, 4)
     
 class unbind_resp(PDU):
     '''SMPP unbind_resp PDU type
     The SMPP unbind_resp PDU is used to reply to an unbind request. It comprises the SMPP
     message header only.'''
     
-    command_id = Integer(6, 4)
+    command_id = Integer(command_id.unbind_resp, 4)
     
 '''Enquire Link Operation
 This PDU can be originated by either the ESME or MC and is used to provide a confidencecheck
@@ -111,12 +111,12 @@ class enquire_link(PDU):
     '''This PDU can be originated by either the ESME or MC and is used to provide a confidencecheck
     of the communication path between an ESME and a MC.'''
     
-    command_id = Integer(15, 4)
+    command_id = Integer(command_id.enquire_link, 4)
     
 class enquire_link_resp(PDU):
     '''The enquire_link_resp PDU is used to reply to an enquire_link request.'''
     
-    command_id = Integer(15, 4)
+    command_id = Integer(command_idenquire_link_resp, 4)
     
 '''Alert Notification Operation
 The alert_notification PDU is sent by the MC to the ESME across a Receiver or Transceiver
@@ -131,7 +131,7 @@ Note: There is no associated alert_notification_resp PDU.'''
 class alert_notification(PDU):
     '''SMPP alert_notification PDU type'''
     
-    command_id = Integer(102, 4)
+    command_id = Integer(command_id.alert_notification, 4)
     source_addr_ton = Integer(0, 1) # Type of Number for alert SME.
     source_addr_npi = Integer(0, 1) # Numbering Plan Indicator for alert SME.
     source_addr = CString("")       # Address of alert SME.
@@ -147,5 +147,5 @@ corrupt PDU.'''
 class generic_nack(PDU):
     "SMPP generic_nack PDU type"
     
-    command_id = Integer(102, 4)
+    command_id = Integer(command_id.generic_nack, 4)
     
