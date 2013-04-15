@@ -123,7 +123,7 @@ class SubmitSm(PDU):
     dest_addr_ton = Integer(TON.INTERNATIONAL, 1)
     dest_addr_npi = Integer(NPI.ISDN, 1)
     destination_addr = CString("")
-    esm_class = Integer(esm.Default_mode, 1)  
+    esm_class = Integer(esm_class.Default_mode, 1)  
     protocol_id = Integer(0, 1)              #page 129, its value is NULL
     priority_flag = Integer(0, 1)            #page 129
     schedule_delivery_time = CString("")
@@ -154,7 +154,7 @@ class DataSm(PDU):
     dest_addr_ton = Integer(TON.INTERNATIONAL, 1)
     dest_addr_npi = Integer(NPI.ISDN, 1)
     destination_addr = CString("")
-    esm_class = Integer(esm.Default_mode, 1)  
+    esm_class = Integer(esm_class.Default_mode, 1)  
     registered_delievery = Integer(0, 1)     #page 130
     data_coding = Integer(0, 1)              #page 123
     #TLV Submission operations
