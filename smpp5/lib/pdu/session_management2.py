@@ -107,7 +107,7 @@ class AlertNotification(PDU):
     esme_addr = CString("")
     ms_availability_status=TLV(1058,0)
 
-class Generic_nack(PDU):
+class Generic_Nack(PDU):
     "Generic Nack Response PDU type"
 
     command_id = Integer(command_id.generic_nack, 4)
