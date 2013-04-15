@@ -1,7 +1,7 @@
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.pdu.pdu import PDU
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag
+from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag, dest_flag
 
 
 class BindTransmitter(PDU):
@@ -107,8 +107,8 @@ class AlertNotification(PDU):
     esme_addr = CString("")
     ms_availability_status=TLV(1058,0)
 
-class GenericNack(PDU):
-    "Generic Nack PDU type"
+class Generic_nack(PDU):
+    "Generic Nack Response PDU type"
 
     command_id = Integer(command_id.generic_nack, 4)
 
@@ -175,13 +175,13 @@ class SubmitMulti(PDU):
     source_addr_npi = Integer(NPI.ISDN, 1)
     source_addr = CString("")
     number_of_dests = Integer(1, 1)           #page 72
-    sme_dest_flag = Integer(command_id.dest_flag_value1, 1)
+    sme_dest_flag = Integer(dest_flag.SME_ADDRESS, 1)
     dest_addr_ton = Integer(TON.INTERNATIONAL, 1)
     dest_addr_npi = Integer(NPI.ISDN, 1)
     destination_addr = CString("")
-    distribution_dest_flag = Integer(command_id.dest_flag_value2, 1)
+    distribution_dest_flag = Integer(dest_flag.DISTRIBUTION_LIST_NAME, 1)
     dl_name = CString("") 
-    esm_class = Integer(esm.Default_mode, 1)  
+    esm_class = Integer(esm_class.Default_mode, 1)  
     protocol_id = Integer(0, 1)              #page 129, its value is NULL
     priority_flag = Integer(0, 1)            #page 129
     schedule_delivery_time = CString("")
