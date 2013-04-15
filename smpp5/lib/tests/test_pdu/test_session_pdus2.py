@@ -190,12 +190,12 @@ def test_22_enqr_lnk_resp_decode():
 
 #------------Generic Nack Encoding And Decoding-----------------
 def test_23_genrc_nak_encode():
-    "Test Enquire Link encoding"
+    "Test Generic Nack encoding"
     P = GenericNack()
     assert '00 00 00 10 80 00 00 00 00 00 00 00 00 00 00 01' == hex_convert(P.encode(), 150)
 
-def test_24_egenrc_nak_decode():
-    "Test Enquire Link decoding"
+def test_24_genrc_nak_decode():
+    "Test Generic Nack decoding"
     data = b'\x00\x00\x00/\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
            
     P = GenericNack.decode(data)
