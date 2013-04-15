@@ -59,7 +59,7 @@ def test_05_bind_rsvr_encode():
     assert '00 00 00 2F 00 00 00 01 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
            ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
- def test_06_bind_rsvr_decode():
+def test_06_bind_rsvr_decode():
     "Test Bind Receiver decoding"
     data = b'\x00\x00\x00/\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
            b'SUBMIT1\x00P\x01\x01\x00'
