@@ -1,3 +1,8 @@
+from smpp5.lib.parameter_types import Integer, CString, String, TLV
+from smpp5.lib.pdu.pdu import PDU
+from smpp5.lib.constants import interface_version as IV
+from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag, dest_flag
+
 class SubmitSm(PDU):
     "Submit Sm PDU type"
 
