@@ -4,6 +4,7 @@ from smpp5.lib.pdu.session_management import BindTransmitter
 from smpp5.lib.constants import interface_version as IV
 from smpp5.lib.constants import NPI, TON
 
+#--------------------------------------------------------------------------------
 
 def test_01_bind_tr_encode():
     "Test Bind Transmitter encoding"
@@ -29,30 +30,25 @@ def test_02_bind_tr_decode():
     assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
            ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
+#--------------------------------------------------------------------------------
+
 def test_01_bind_tr_rsp_encode():
     "Test Bind Transmitter Response encoding"
-    P = BindTransmitter()
+    P = BindTransmitterResp()
 
     P.system_id = CString("SMPP3TEST")
-    P.password = CString("secret08")
-    P.system_type = CString("SUBMIT1")
     P.interface_version = Integer(IV.SMPP_VERSION_5, 1)
-    P.addr_ton = Integer(TON.INTERNATIONAL, 1)
-    P.addr_npi = Integer(NPI.ISDN, 1)
-    P.address_range = CString('')
-
-    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
-           ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
+    
+    assert '53 4D 50 50 33 54 45 53 54 00 50 ' == hex_convert(P.encode(), 150)
 
 
 def test_02_bind_tr_rsp_decode():
     "Test Bind Transmitter Response decoding"
-    data = b'\x00\x00\x00/\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
-           b'SUBMIT1\x00P\x01\x01\x00'
-    P = BindTransmitter.decode(data)
-    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
-           ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
+    data = b'SMPP3TEST\0x50\x00'
+    P = BindTransmitterResp.decode(data)
+    assert '53 4D 50 50 33 54 45 53 54 00 50 ' == hex_convert(P.encode(), 150)
 
+#--------------------------------------------------------------------------------
 
 def test_01_bind_rcr_encode():
     "test Bind Receiver encoding"
@@ -69,7 +65,8 @@ def test_01_bind_rcr_encode():
 
     assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
            ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
-           
+
+
 def test_02_bind_rcr_decode():
     "Test Bind Receiver decoding"
     data = b'\x00\x00\x00/\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
@@ -77,6 +74,26 @@ def test_02_bind_rcr_decode():
     P = BindReceiver.decode(data)
     assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
            ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
+
+#--------------------------------------------------------------------------------
+
+def test_01_bind_rcr_rsp_encode():
+    "Test Bind Receiver Response encoding"
+    P = BindReceiverResp()
+
+    P.system_id = CString("SMPP3TEST")
+    P.interface_version = Integer(IV.SMPP_VERSION_5, 1)
+    
+    assert '53 4D 50 50 33 54 45 53 54 00 50 ' == hex_convert(P.encode(), 150)
+
+
+def test_02_bind_rcr_rsp_decode():
+    "Test Bind Receiver Response decoding"
+    data = b'SMPP3TEST\0x50\x00'
+    P = BindReceiverResp.decode(data)
+    assert '53 4D 50 50 33 54 45 53 54 00 50 ' == hex_convert(P.encode(), 150)
+
+#--------------------------------------------------------------------------------
 
 def test_01_bind_tcr_encode():
     "test Bind Transceiver encoding"
@@ -92,7 +109,8 @@ def test_01_bind_tcr_encode():
     
     assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
            ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
-           
+
+
 def test_02_bind_tcr_decode():
     "Test Bind Transceiver decoding"
     data = b'\x00\x00\x00/\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
@@ -100,5 +118,67 @@ def test_02_bind_tcr_decode():
     P = BindTransceiver.decode(data)
     assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38' + \
            ' 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
-           
-BindTransceiverResp
+
+#--------------------------------------------------------------------------------
+
+def test_01_bind_tcr_rsp_encode():
+    "Test Bind Transceiver Response encoding"
+    P = BindTransceiverResp()
+
+    P.system_id = CString("SMPP3TEST")
+    P.interface_version = Integer(IV.SMPP_VERSION_5, 1)
+    
+    assert '53 4D 50 50 33 54 45 53 54 00 50 ' == hex_convert(P.encode(), 150)
+
+
+def test_02_bind_tcr_rsp_decode():
+    "Test Bind Transceiver Response decoding"
+    data = b'SMPP3TEST\0x50\x00'
+    P = BindTransceiverResp.decode(data)
+    assert '53 4D 50 50 33 54 45 53 54 00 50 ' == hex_convert(P.encode(), 150)
+
+#--------------------------------------------------------------------------------
+
+def test_01_outbind_encode():
+    "Test Out Bind encoding"
+    P = OutBind()
+
+    P.system_id = CString("SMPP3TEST")
+    P.password = CString("")
+    
+    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 ' +\
+           '30 38 00 ' == hex_convert(P.encode(), 150)
+
+
+def test_02_outbind_decode():
+    "Test Out Bind decoding"
+    data = b'SMPP3TESTsecret08\x00'
+    P = OutBind.decode(data)
+    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74' +\
+           '30 38 00 ' == hex_convert(P.encode(), 150)
+
+#--------------------------------------------------------------------------------
+
+def test_01_alert_notification_encode():
+    "Test Alert Notification encoding"
+    P = AlertNotification()
+    
+    P.system_id = CString("SMPP3TEST")
+    P.password = CString("secret08")
+    P.system_type = CString("SUBMIT1")
+    P.source_addr_ton = Integer(TON.INTERNATIONAL, 1)
+    P.source_addr_npi = Integer(NPI.ISDN, 1)
+    P.source_addr = CString("")
+    P.esme_addr_ton = Integer(TON.INTERNATIONAL, 1)
+    P.esme_addr_npi = Integer(NPI.ISDN, 1)
+    P.esme_addr = CString("")
+    P.ms_availability_status=TLV(1058,0)
+   
+
+    assert ' 00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65' + \
+           '74 30 38 00 53 55 42 4D 49 54 31 00 01 01 01 01 ' == hex.convert(P.encode(),150)
+            #TLV value missing in it
+            
+def test_02_alert_notification_decode():
+    "Test Alert Notification decoding"
+    data = b'SMPP3TESTsecret08SUBMIT1
