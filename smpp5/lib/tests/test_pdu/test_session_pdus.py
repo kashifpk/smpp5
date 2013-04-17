@@ -241,8 +241,6 @@ def test_01_alert_notification_encode():
     assert '00 00 00 2a 00 00 01 02 00 00 00 00 00 00 00 01' + \
            '01 01 00 01 01 00 04 22' == hex.convert(P.encode(),150)
             
-            # TLV value missing here
-            
 def test_02_alert_notification_decode():
     "Test Alert Notification decoding"
     data = b'\x00\x00\x00\x2a\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x01' + \
@@ -251,8 +249,6 @@ def test_02_alert_notification_decode():
     assert '00 00 00 2a 00 00 01 02 00 00 00 00 00 00 00 01' + \
            '01 01 00 01 01 00 04 22' == hex.convert(P.encode(),150)
            
-           # TLV value missing in it
-         
 #--------------------------------------------------------------------------------
 
 def test_01_generic_nack_encode():
