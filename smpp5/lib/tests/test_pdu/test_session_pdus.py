@@ -244,7 +244,7 @@ def test_01_alert_notification_encode():
 def test_02_alert_notification_decode():
     "Test Alert Notification decoding"
     data = b'\x00\x00\x00\x2a\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x01' + \
-           b '\x01\x01\x00\x01\x01\x402'
+           b'\x01\x01\x00\x01\x01\x402'
     P =  AlertNotification.decode(data)
     assert '00 00 00 2a 00 00 01 02 00 00 00 00 00 00 00 01' + \
            '01 01 00 01 01 00 04 22' == hex.convert(P.encode(),150)

@@ -116,7 +116,7 @@ class EnquireLink(PDU):
 class EnquireLinkResp(PDU):
     '''The enquire_link_resp PDU is used to reply to an enquire_link request.'''
     
-    command_id = Integer(command_idenquire_link_resp, 4)
+    command_id = Integer(command_id.enquire_link_resp, 4)
     
 '''Alert Notification Operation
 The alert_notification PDU is sent by the MC to the ESME across a Receiver or Transceiver
