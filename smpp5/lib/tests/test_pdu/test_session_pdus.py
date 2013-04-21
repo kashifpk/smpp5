@@ -2,7 +2,7 @@ from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.pdu.session_management import *
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.constants import NPI, TON
+from smpp5.lib.constants import *
 
 #--------------------------------------------------------------------------------
 
