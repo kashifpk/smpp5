@@ -29,9 +29,7 @@ def test_25_sbmit_sm_encode():
     P.sm_length = Integer(0, 1) 
     P.short_message = String('Message')
 
-    assert '00 00 00 31 00 00 00 04 00 00 00 00 00 00 00 01 00 01 01 31 36 31 36 00 01 01 31 35 31 35 00 00 00 00 20 00 00 00 00 00 00 00 4D 65 73 73 61 67 65 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 31 00 00 00 04 00 00 00 00 00 00 00 01 00 01 01 31 36 31 36 00 01 01 31 35 31 35 00 00 00 00 20 00 00 00 00 00 00 00 4D 65 73 73 61 67 65 ' == hex_convert(P.encode(), 150)
 def test_26_sbmit_sm_decode():
 
     "Test Submit Sm decoding"
@@ -39,3 +37,25 @@ def test_26_sbmit_sm_decode():
 
     P = SubmitSm.decode(data)
     '00 00 00 31 00 00 00 04 00 00 00 00 00 00 00 01 00 01 01 31 36 31 36 00 01 01 31 35 31 35 00 00 00 00 20 00 00 00 00 00 00 00 4D 65 73 73 61 67 65 ' == hex_convert(P.encode(), 150)
+ #-----------------------------------------------------------------------
+ 
+def test_01_sbmit_sm_resp_encode():
+    "Test Submit Sm Encoding"
+    P = SubmitSmResp()
+    P.message_id = CString("2468ACE")
+    assert '00 00 00 18 80 00 00 04 00 00 00 00 00 00 00 01 32 34 36 38 41 43 45 00 ' ==  hex_convert(P.encode(), 150)
+    
+    
+def test_01_sbmit_sm_resp_decode():
+    "Test Submit Sm Decoding"
+    
+    data = b'\x00\x00\x00\x18\x80\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x012468ACE\x00'
+
+    P = SubmitSmResp.decode(data)
+    assert '00 00 00 18 80 00 00 04 00 00 00 00 00 00 00 01 32 34 36 38 41 43 45 00 ' ==  hex_convert(P.encode(), 150)
+
+
+    
+    
+    
+    
