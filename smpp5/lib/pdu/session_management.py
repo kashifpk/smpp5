@@ -75,7 +75,7 @@ class BindTransceiverResp(PDU):
     system_id = CString("")         # MC identifier. Identifies the MC to the ESME.
     interface_version = Integer(IV.SMPP_VERSION_5, 1) # Identifies the version of the SMPP protocol supported by the ESME.
     
-class Outbind(PDU):
+class OutBind(PDU):
     '''SMPP outbind PDU type
     This operation is used by the MC to signal an ESME to originate a outbind request to the MC.'''
     
@@ -83,7 +83,7 @@ class Outbind(PDU):
     system_id = CString("")         # MC identifier. Identifies the MC to the ESME.
     password = CString("")          # The password may be used by the ESME for security reasons to authenticate the MC originating the outbind.
     
-class Unbind(PDU):
+class UnBind(PDU):
     '''SMPP unbind PDU type
     The purpose of the SMPP unbind operation is to deregister an instance of an ESME from the MC 
     and inform the MC that the ESME no longer wishes to use this network connection for
