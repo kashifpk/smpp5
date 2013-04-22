@@ -40,14 +40,14 @@ def test_26_sbmit_sm_decode():
  #-----------------------------------------------------------------------
  
 def test_01_sbmit_sm_resp_encode():
-    "Test Submit Sm Encoding"
+    "Test Submit Sm Response Encoding"
     P = SubmitSmResp()
     P.message_id = CString("2468ACE")
     assert '00 00 00 18 80 00 00 04 00 00 00 00 00 00 00 01 32 34 36 38 41 43 45 00 ' ==  hex_convert(P.encode(), 150)
     
     
 def test_01_sbmit_sm_resp_decode():
-    "Test Submit Sm Decoding"
+    "Test Submit Sm Response Decoding"
     
     data = b'\x00\x00\x00\x18\x80\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x012468ACE\x00'
 
