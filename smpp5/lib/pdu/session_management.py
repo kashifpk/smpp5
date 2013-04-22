@@ -93,7 +93,7 @@ class UnBind(PDU):
 
     command_id = Integer(command_id.unbind, 4)
     
-class UnbindResp(PDU):
+class UnBindResp(PDU):
     '''SMPP unbind_resp PDU type
     The SMPP unbind_resp PDU is used to reply to an unbind request. It comprises the SMPP
     message header only.'''
