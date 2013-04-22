@@ -82,6 +82,31 @@ def test_01_data_sm_decode():
     assert '00 00 00 22 00 00 01 03 00 00 00 00 00 00 00 01 00 01 01 31 36 31 36 00 01 01 31 35 31 35 00 00 00 00 ' ==  hex_convert(P.encode(), 150)
 
     
+#-------------------------------------------------------------------------------
+
+def test_01_data_sm_resp_encode():
+    "Test Data Sm Response Encoding"
+    P = DataSmResp()
+    P.message_id = CString("2468ACE")
+    assert '00 00 00 18 80 00 01 03 00 00 00 00 00 00 00 01 32 34 36 38 41 43 45 00 '  ==  hex_convert(P.encode(), 150)
     
+    
+def test_01_data_sm_resp_decode():
+    "Test Data Sm Response Decoding"
+    
+    data = b'\x00\x00\x00\x18\x80\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x012468ACE\x00'
+
+    P = DataSmResp.decode(data)
+    assert '00 00 00 18 80 00 01 03 00 00 00 00 00 00 00 01 32 34 36 38 41 43 45 00 ' ==  hex_convert(P.encode(), 150)
+    
+
+
+
+
+
+
+
+
+
     
     
