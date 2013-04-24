@@ -2,9 +2,7 @@ from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.pdu.session_management import *
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, 
-
-UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
+from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
 from smpp5.lib.constants import *
 
 #--------------------------------------------------------------------------------
@@ -21,9 +19,7 @@ def test_01_bind_tr_encode():
     P.addr_npi = Integer(NPI.ISDN, 1)
     P.address_range = CString('')
 
-    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
 
 def test_02_bind_tr_decode():
@@ -31,9 +27,7 @@ def test_02_bind_tr_decode():
     data = b'\x00\x00\x00/\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
             b'SUBMIT1\x00P\x01\x01\x00'
     P = BindTransmitter.decode(data)
-    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 2F 00 00 00 02 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
 
 #--------------------------------------------------------------------------------
@@ -69,18 +63,14 @@ def test_01_bind_rcr_encode():
     P.address_range = CString('')
 
 
-    assert '00 00 00 2F 00 00 00 01 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 2F 00 00 00 01 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
 
 def test_02_bind_rcr_decode():
     "Test Bind Receiver decoding"
     data = b'\x00\x00\x00/\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00SUBMIT1\x00P\x01\x01\x00'
     P = BindReceiver.decode(data)
-    assert '00 00 00 2F 00 00 00 01 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 2F 00 00 00 01 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
 #--------------------------------------------------------------------------------
 
@@ -114,9 +104,7 @@ def test_01_bind_tcr_encode():
     P.addr_npi = Integer(NPI.ISDN, 1)
     P.address_range = CString('')
     
-    assert '00 00 00 2F 00 00 00 09 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 2F 00 00 00 09 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
 
 def test_02_bind_tcr_decode():
@@ -124,9 +112,7 @@ def test_02_bind_tcr_decode():
     data = data = b'\x00\x00\x00/\x00\x00\x00\x09\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
            b'SUBMIT1\x00P\x01\x01\x00'
     P = BindTransceiver.decode(data)
-    assert '00 00 00 2F 00 00 00 09 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == 
-
-hex_convert(P.encode(), 150)
+    assert '00 00 00 2F 00 00 00 09 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74 30 38 00 53 55 42 4D 49 54 31 00 50 01 01 00 ' == hex_convert(P.encode(), 150)
 
 #--------------------------------------------------------------------------------
 
@@ -163,7 +149,7 @@ def test_02_outbind_decode():
     "Test Out Bind decoding"
     data = b'\x00\x00\x00\x23\x00\x00\x00\x0B\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00'
     P = OutBind.decode(data)
-    assert '00 00 00 23 00 00 00 0B 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74' +\
+    assert '00 00 00 23 00 00 00 0B 00 00 00 00 00 00 00 01 53 4D 50 50 33 54 45 53 54 00 73 65 63 72 65 74' + \
            ' 30 38 00 ' == hex_convert(P.encode(), 150)
 
 #--------------------------------------------------------------------------------
