@@ -56,7 +56,7 @@ class Server(object):
                 self.status = 'BOUND_TRX'
                 print("BIND TRANCEIVER PDU")
             
-            pdu = self.conn.recv(command_length-4)
+            pdu = self.conn.recv(command_length-8)
             rec = BindTransmitter.decode(length+cid+pdu)
             print("Encoded PDU sent from client and decoded is:  "+hex_convert(rec.encode()))
             return rec
