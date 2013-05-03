@@ -8,8 +8,7 @@ from smpp5.lib.pdu.pdu import PDU
 class Server(object):
     '''Server class is responsible for recieving PDUs from client and decode them and also for sending encoded PDUs response'''
    
-    status='CLOSED'
-    decode_pdu='' 
+    status='CLOSED' 
     PORT = 50007
 
     def __init__(self):
