@@ -20,7 +20,6 @@ class Server(object):
         (self.conn, addr) = self.server.accept()
         print('Connected by' + str(addr))
         while(self.status in ['OPEN', 'BOUND_TX', 'BOUND_RX' , 'BOUND_TRX']):
-            
             decode_pdu = self.recieve()         #calling recieve method
             resp_pdu=self.send_resp()           #calling send_resp method
             self.conn.sendall(resp_pdu)
