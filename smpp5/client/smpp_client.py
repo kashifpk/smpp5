@@ -25,10 +25,18 @@ class Client(object):
             self.conn.connect((socket.gethostname(), self.PORT))
             self.state = 'OPEN'
             
+    def disconnection(self,):
+        if self.state in ['BOUND_TX', 'BOUND_RX', 'BOUND_TRX']:
+            self.Unbind()
+            self.state='OPEN'
+            self.conn.close()
+            self.state = 'CLOSED'
+    
+            
     def recieve(self):
         '''This method is responsible for recieving response PDUs and decoding them'''
         pdu = self.conn.recv(1024)
-        P=''
+        P= ''
         if(self.state=='BOUND_TX'): 
             P = BindTransceiverResp()
             P = BindTransceiverResp.decode(pdu)
@@ -42,11 +50,14 @@ class Client(object):
         elif(self.state=='BOUND_TRX'): 
             P = BindTransceiverResp()
             P = BindTransceiverResp.decode(pdu)
-        
+            #print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
+            
+        elif(self.state=='UNBIND'): 
+            P = UnBindResp()
+            P = UnBindResp.decode(pdu)
         print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
             
-    
-            
+               
     def Bindtransmitter(self):
         '''This method is specifically for Bind Transmitter which encode this PDU and sent it to Server'''
         if self.state in ['CLOSED']:
@@ -58,10 +69,12 @@ class Client(object):
             P.system_type = CString("SUBMIT1") 
             pdu = P.encode()
             self.conn.send(pdu)
+            print("****************BIND TRANSMITTER*********************** ")
             print("PDU that is encoded and sent to server is:  ")
             print(pdu)
             self.state = 'BOUND_TX'
             self.recieve()
+            print()
             
     def Bindreceiver(self):
         '''This method is specifically for Bind Receiver which encode this PDU and sent it to Server'''
@@ -74,26 +87,49 @@ class Client(object):
             P.system_type = CString("SUBMIT1")
             pdu = P.encode()
             self.conn.send(pdu)
+            print("******************BIND RECEIVER*************************  ")
             print("PDU that is encoded and sent to server is:  ")
             print(pdu)
             self.state = 'BOUND_RX'
             self.recieve()
+            print()
             
     def Bindtransceiver(self):
         '''This method is specifically for Bind Transceiver which encode this PDU and sent it to Server'''
         if self.state in ['CLOSED']:
             self.connection()
-        if self.state in ['OPEN', 'BOUND_TX', 'BOUND_RX']:
+        elif self.state in ['OPEN', 'BOUND_TX', 'BOUND_RX']:
             P = BindTransceiver()
             P.system_id = CString("SMPP3TEST")
             P.password = CString("secret08")
             P.system_type = CString("SUBMIT1")
             pdu = P.encode()
             self.conn.send(pdu)
+            print("******************BIND TRANSCEIVER************************ ")
             print("PDU that is encoded and sent to server is:  ")
             print(pdu)
+            print()
             self.state = 'BOUND_TRX'
             self.recieve()
+            print()
+            
+    def Unbind(self):
+        ''' this method is for sending UNBIND PDU to server by encoding it'''
+        if self.state in ['CLOSED']:
+            self.connection()
+        elif self.state in ['BOUND_TX', 'BOUND_RX', 'BOUND_TRX']:
+            P = UnBind()
+            pdu = P.encode()
+            self.conn.send(pdu)
+            print("****************UNBIND************************ ")
+            print("PDU that is encoded and sent to server is:  ")
+            print(pdu)
+            print()
+            self.state = 'UNBIND'
+            self.recieve()
+            
+        pass
+    
             
            
         
@@ -101,9 +137,10 @@ if __name__ == '__main__':
     #Testing client
     client=Client()
     client.connection()
-    client.Bindtransmitter()
-    #client.Bindreceiver()
-    #client.Bindtransceiver()
+    client.Bindtransmitter() 
+    client.Bindreceiver()
+    client.Bindtransceiver()
+    client.disconnection()
     
     
     
