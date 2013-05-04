@@ -99,6 +99,51 @@ def test_01_data_sm_resp_decode():
     P = DataSmResp.decode(data)
     assert '00 00 00 18 80 00 01 03 00 00 00 00 00 00 00 01 32 34 36 38 41 43 45 00 ' ==  hex_convert(P.encode(), 150)
     
+    
+#-----------------------------------------------------------------------------
+
+
+def test_01_submit_multi_encode():
+    "Test Submit Multi Encoding"
+
+    P = SubmitMulti()
+    P.service_type = CString("")
+    P.source_addr = CString("1616")
+    P.destination_addr = CString("1515")
+    P.dl_name = CString("") 
+    P.schedule_delivery_time = CString("")
+    P.validity_period = CString("")
+    P.short_message = String("Message")
+    
+    assert '00 00 00 34 00 00 00 21 00 00 00 00 00 00 00 01 00 01 01 31 36 31 36 00 01 01 01 01 31 35 31 35 00 02 00 00 00 00 00 00 00 00 00 00 00 4D 65 73 73 61 67 65 '
+
+def test_02_submit_multi_decode():
+    "Test Submit Multi Decoding"
+    data =  b'\x00\x00\x00\x34\x00\x00\x00\x21\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x011616\x00\x01\x01\x01\x011515\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Message'
+    P = SubmitMulti.decode(data)
+    assert '00 00 00 34 00 00 00 21 00 00 00 00 00 00 00 01 00 01 01 31 36 31 36 00 01 01 01 01 31 35 31 35 00 02 00 00 00 00 00 00 00 00 00 00 00 4D 65 73 73 61 67 65 '
+    
+#-----------------------------------------------------------------------------------
+
+def test_01_submit_multi_response_encode():
+    
+    "Test Submit Multi Response Encoding"
+    P = SubmitMultiResp()
+    P.destination_addr = CString("1515")
+    assert '00 00 00 1D 80 00 00 21 00 00 00 00 00 00 00 01 00 00 01 01 31 35 31 35 00 00 00 00 00 ' == hex_convert(P.encode(), 150)
+def test_01_submit_multi_response_decode():
+    "Test Submit Multi Response Decoding"
+    
+    data= b'\x00\x00\x00\x1d\x80\x00\x00\x21\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x01\x011515\x00\x00\x00\x00\x00'
+    P=SubmitMultiResp.decode(data)
+    assert '00 00 00 1D 80 00 00 21 00 00 00 00 00 00 00 01 00 00 01 01 31 35 31 35 00 00 00 00 00 ' == hex_convert(P.encode(), 150)
+
+
+
+   
+    
+
+
 
 
 
