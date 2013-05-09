@@ -26,39 +26,54 @@ class Server(object):
             print("Response encoded and sent to Client is: ")
             print(resp_pdu)
         self.conn.close()
-        
+
     def recieve(self):
         '''This method is responsible for recieving encoded PDUs from Client and decode them'''
         length = self.conn.recv(4)
-        rec=''
-        if(len(length)==4):
-            command_length=Integer.decode(length).value
-            print("Length of PDU send by client is : ")
-            print(command_length)
-            cid = self.conn.recv(4)
-            command_id=Integer.decode(cid).value
-            pdu= self.conn.recv(command_length-8)
-            #print(command_id)
-            if(command_id==2):
-                self.status='BOUND_TX'
-                print("*********************BIND TRANSMITTER PDU*********************")
-                rec=BindTransmitter.decode(length+cid+pdu)
-            elif(command_id==1):
-                self.status='BOUND_RX'
-                print("*********************BIND RECEIVER PDU************************")
-                rec=BindReceiver.decode(length+cid+pdu)
-            elif(command_id==9):
-                self.status='BOUND_TRX'
-                print("*********************BIND TRANCEIVER PDU**********************")
-                rec= BindTransceiver.decode(length+cid+pdu)
-            elif(command_id==6):
-                self.status='UNBIND'
-                print("*************************UBIND PDU****************************")
-                rec= UnBind.decode(length+cid+pdu)
-            
+        while len(length) < 4:
+            length += self.conn.recv(4-len(length))
+
+        rec = ''
+
+        pdu_length = Integer.decode(length).value
+        pdu_str = length
+        while len(pdu_str) != pdu_length:
+            pdu_str += self.conn.recv(pdu_length-len(pdu_str))
+
+        P = PDU.decode(pdu_str)
+        if type(P) in [BindTransmitter, BindReceiver, BindTransceiver]:
+            #TODO: check credentials against DB here.
+            pass
+
+        #if(len(length)==4):
+        #    command_length=Integer.decode(length).value
+        #    print("Length of PDU send by client is : ")
+        #    print(command_length)
+        #    cid = self.conn.recv(4)
+        #    command_id=Integer.decode(cid).value
+        #    pdu= self.conn.recv(command_length-8)
+        #    #print(command_id)
+        #    if(command_id==2):
+        #        self.status='BOUND_TX'
+        #        print("*********************BIND TRANSMITTER PDU*********************")
+        #        rec=BindTransmitter.decode(length+cid+pdu)
+        #    elif(command_id==1):
+        #        self.status='BOUND_RX'
+        #        print("*********************BIND RECEIVER PDU************************")
+        #        rec=BindReceiver.decode(length+cid+pdu)
+        #    elif(command_id==9):
+        #        self.status='BOUND_TRX'
+        #        print("*********************BIND TRANCEIVER PDU**********************")
+        #        rec= BindTransceiver.decode(length+cid+pdu)
+        #    elif(command_id==6):
+        #        self.status='UNBIND'
+        #        print("*************************UBIND PDU****************************")
+        #        rec= UnBind.decode(length+cid+pdu)
+
             #rec=BindTransmitter.decode(length+cid+pdu)
-            print("Encoded PDU sent from client and decoded is:  "+hex_convert(rec.encode()))
-            return rec
+        print("Encoded PDU sent from client and decoded is:  "+hex_convert(P.encode()))
+        return P
+
     def send_resp(self):
         '''This method is responsible for encoding response PDUs'''
         if(self.status=='BOUND_TX'):
