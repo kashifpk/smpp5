@@ -11,5 +11,8 @@ Base = declarative_base()
 #from models import your_model_names_here
 from .auth import Permission, User, UserPermission, RoutePermission
 
+#to create all tables
+#Base.metadata.create_all()
+
 # Place additional model names here for ease of importing.
 __all__ = ['DBSession', 'Base', 'Permission', 'User', 'UserPermission', 'RoutePermission']
