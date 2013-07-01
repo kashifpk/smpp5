@@ -17,7 +17,8 @@ requires = [
     'pyramid_handlers',
     'zope.sqlalchemy',
     'wtforms',
-    'wtdojo'
+    'wtdojo',
+    'mysql-python'
     ]
 
 if sys.version_info[:3] < (2, 5, 0):

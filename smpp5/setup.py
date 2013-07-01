@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-requires = ['sqlalchemy', 'zope.sqlalchemy']
+requires = ['sqlalchemy', 'zope.sqlalchemy', 'pymysql3']
 
 setup(
     name='smpp5',

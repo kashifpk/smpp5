@@ -37,15 +37,14 @@ class RoutePermission(Base):
 class User(Base):
     __tablename__ = 'users'
 
-    user_id = Column(Integer(100), primary_key=True, autoincrement=True)
-    system_id = Column(Unicode(100))
+    user_id = Column(Unicode(100), primary_key=True)
     password = Column(Unicode(40))
     system_type = Column(Unicode(40))
 
-    def __init__(self):
-    	self.system_id='SMPP3TEST'
-    	self.password='secret08'
-    	self.system_type='SUBMIT1'
+    def __init__(self, user_id=None, password=None, system_type=None):
+        self.user_id = user_id
+        self.password = password
+        self.system_type = system_type
 
 
 class UserPermission(Base):
