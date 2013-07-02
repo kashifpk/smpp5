@@ -4,6 +4,10 @@ from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.constants import *
 from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
 from smpp5.lib.pdu.pdu import PDU
+import db
+from db import DBSession
+from models import User
+import hashlib
 
 class Server(object):
     '''Server class is responsible for recieving PDUs from client and decode them and also for sending encoded PDUs response'''
@@ -44,6 +48,12 @@ class Server(object):
         P = PDU.decode(pdu_str)
         if type(P) in [BindTransmitter, BindReceiver, BindTransceiver]:
             #TODO: check credentials against DB here.
+            db.bind_session()
+            passhash = hashlib.sha1(bytes(password, encoding="utf8")).hexdigest()
+            DBSession.query(User).filter_by(user_id=system_id, system_type=system_type, password=passhash).first()
+            u = DBSession.query(User).first()
+            print(u.user_id)
+            print(u.password)
             pass
 
         #if(len(length)==4):
