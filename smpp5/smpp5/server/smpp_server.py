@@ -46,7 +46,7 @@ class Server(object):
             pdu_str += self.conn.recv(pdu_length-len(pdu_str))
 
         P = PDU.decode(pdu_str)
-        print P
+        print(P)
         if type(P) in [BindTransmitter, BindReceiver, BindTransceiver]:
             #TODO: check credentials against DB here.
             db.bind_session()
