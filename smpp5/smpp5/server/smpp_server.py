@@ -2,6 +2,7 @@ import socket
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.constants import *
+from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag
 from smpp5.lib.constants.command_status import *
 from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
 from smpp5.lib.pdu.pdu import PDU
@@ -102,7 +103,7 @@ class Server(object):
     
         elif(self.status=='ERROR'):
          P=GenericNack()
-         #P.command_status= ESME_RBINDFAIL
+         P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
          return P.encode()
     
 
