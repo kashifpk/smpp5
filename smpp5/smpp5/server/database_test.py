@@ -12,42 +12,32 @@ from smpp5.lib.constants import *
 
 if '__main__' == __name__:
     db.bind_session()
-    #data = b'\x00\x00\x00/\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
-     #       b'SUBMIT1\x00P\x01\x01\x00'
-    #P = BindTransmitter.decode(data)
-    #print(DBSession.query(User).count())
-    #system=P.system_id.value.decode(encoding='ascii')
-    #for R in DBSession.query(User):
-     # if(R.user_id==system):
-      #print(R.user_id)
-       #print("yessssss! it works  :-) ")
+    data = b'\x00\x00\x00/\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01SMPP3TEST\x00secret08\x00' + \
+      b'SUBMIT1\x00P\x01\x01\x00'
+    P = BindTransmitter.decode(data)
+    print(DBSession.query(User).count())
+    system=P.system_id.value.decode(encoding='ascii')
+    for U in DBSession.query(User).all():
+      if(U.user_id==system):
+         print(U.user_id)
+         print(U.password)
+         print(U.system_type)
+         print("yessssss! it works :-) ")
+         #TODO: Initially uncomment below given comments if you have already inserted record for username = SMPP3TEST, password = secret08,system_type = SUBMIT1 and after running below given statements again put these statements into comments 
+         #if('SMPP3TEST'==u.user_id):
+         # DBSession.delete(u)
+         # transaction.commit()
+
       
        
     #Insert records in database
     
-    U = User()
-    U.user_id='SMPP3TEST'
-    password='secret08'
-    passhash = hashlib.sha1(bytes(password, encoding="utf8")).hexdigest()
-    U.password=passhash
-    U.system_type='SUBMIT1'
-    DBSession.add(U)
-    transaction.commit()
-    #DBSession.query(User).filter_by(user_id=system_id, system_type=system_type, password=passhash).first()
+    #U = User()
+    #U.user_id='system'
+    #password='system123'
     #passhash = hashlib.sha1(bytes(password, encoding="utf8")).hexdigest()
-    for u in  DBSession.query(User).all():
-        print(u.user_id)
-        print(u.password)
-        print(u.system_type)
-        #if('SMPP3TEST'==u.user_id):
-         #   DBSession.delete(u)
-          #  transaction.commit()
-
-    #S=User()
-    #S.user_id='SMPP3TEST'
-    #S.password='secret08'
-    #S.system_type='SUBMIT1'
-    #DBSession.add(S)
+    #U.password=passhash
+    #U.system_type='SUBMIT1'
+    #DBSession.add(U)
     #transaction.commit()
-    #
-
+        
