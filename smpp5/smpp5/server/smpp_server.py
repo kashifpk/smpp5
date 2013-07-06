@@ -37,6 +37,7 @@ class Server(object):
 
     def recieve(self):
         '''This method is responsible for recieving encoded PDUs from Client and decode them'''
+        #read 4 bytes
         length = self.conn.recv(4)
         while len(length) < 4:
             #time.sleep(1)   # if bytes received from client are less than 4
