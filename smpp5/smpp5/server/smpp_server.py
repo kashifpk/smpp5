@@ -65,10 +65,11 @@ class Server(object):
          db.bind_session()
          system_id=P.system_id.value.decode(encoding='ascii')
          password=P.password.value.decode(encoding='ascii')
+         passhash = hashlib.sha1(bytes(password, encoding="utf8")).hexdigest()
          system_type=P.system_type.value.decode(encoding='ascii')
          #print(P.system_id.value)
          for R in DBSession.query(User):
-          if(R.user_id==system_id and R.password==password and R.system_type==system_type):
+          if(R.user_id==system_id and R.password==passhash and R.system_type==system_type):
            self.pdu_status='accept'
          if(self.pdu_status=='accept'):
           pass
@@ -112,6 +113,7 @@ class Server(object):
 if __name__ == '__main__':
     #testing server
     servr=Server()
+    
     
     
     
