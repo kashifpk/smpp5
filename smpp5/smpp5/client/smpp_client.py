@@ -35,26 +35,17 @@ class Client(object):
             
     def recieve(self):
         '''This method is responsible for recieving response PDUs and decoding them'''
-        pdu = self.conn.recv(1024)
-        P= ''
-        if(self.state=='BOUND_TX'): 
-            P = BindTransceiverResp()
-            P = BindTransceiverResp.decode(pdu)
-            #print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
-            
-        elif(self.state=='BOUND_RX'): 
-            P = BindReceiverResp()
-            P = BindReceiverResp.decode(pdu)
-            #print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
-            
-        elif(self.state=='BOUND_TRX'): 
-            P = BindTransceiverResp()
-            P = BindTransceiverResp.decode(pdu)
-            #print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
-            
-        elif(self.state=='UNBIND'): 
-            P = UnBindResp()
-            P = UnBindResp.decode(pdu)
+        length = self.conn.recv(4)
+        while len(length) < 4:
+            #time.sleep(1)   # if bytes received from client are less than 4
+            length += self.conn.recv(4-len(length))
+
+        pdu_length = Integer.decode(length).value
+        pdu_str = length
+        while len(pdu_str) != pdu_length:
+            pdu_str += self.conn.recv(pdu_length-len(pdu_str))
+
+        P = PDU.decode(pdu_str)
         print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
             
                
@@ -138,8 +129,9 @@ if __name__ == '__main__':
     client=Client()
     client.connection()
     client.Bindtransmitter() 
-    client.Bindreceiver()
-    client.Bindtransceiver()
+    #client.Bindreceiver()
+    #client.Bindtransceiver()
+    client.Unbind()
     client.disconnection()
     
     
