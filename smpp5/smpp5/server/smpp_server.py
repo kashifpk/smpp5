@@ -17,6 +17,7 @@ class Server(object):
     status='CLOSED'
     decode_pdu='' 
     PORT = 50007
+    seq_numb = ''
 
     def __init__(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,6 +27,7 @@ class Server(object):
         self.status='OPEN'
         (self.conn, addr) = self.server.accept()
         print('Connected by' + str(addr))
+        print()
         while(self.status in ['OPEN', 'BOUND_TX', 'BOUND_TRX', 'BOUND_RX', 'ERROR']):
          decode_pdu = self.recieve()         #calling recieve method
          resp_pdu=self.send_resp()           #calling send_resp method
@@ -45,6 +47,7 @@ class Server(object):
         while len(pdu_str) != pdu_length:
             pdu_str += self.conn.recv(pdu_length-len(pdu_str))
         P = PDU.decode(pdu_str)
+        self.seq_numb = P.sequence_number.value
         if(P.command_id.value==2):
          P=BindTransmitter.decode(pdu_str)
          self.status='BOUND_TX'
@@ -65,40 +68,43 @@ class Server(object):
          record=DBSession.query(User).filter_by(user_id=system_id, password=passhash, system_type=system_type).first()
          if(record==None):
           self.status="ERROR"   
-          print("login failed")
-         else:
-          print("login successfull")
         print("Encoded PDU sent from client and decoded is:  "+hex_convert(P.encode()))
+        print()
         return P
 
     def send_resp(self):
         '''This method is responsible for encoding response PDUs'''
         if(self.status=='BOUND_TX'):
             P = BindTransmitterResp()
+            P.sequence_number=Integer(self.seq_numb,4)
             P.system_id = CString("SMPP3TEST")
             return P.encode()
 
         elif(self.status=='BOUND_RX'):
     
             P = BindReceiverResp()
+            P.sequence_number=Integer(self.seq_numb,4)
             P.system_id = CString("SMPP3TEST")
             return P.encode()
 
         elif(self.status=='BOUND_TRX'):
     
             P = BindTransceiverResp()
+            P.sequence_number=Integer(self.seq_numb,4)
             P.system_id = CString("SMPP3TEST")
             return P.encode()
         
         elif(self.status=='UNBIND'):
     
             P = UnBindResp()
+            P.sequence_number=Integer(self.seq_numb,4)
             return P.encode()
-            self.status='CLOSED'
+            self.status='UNBOUND'
     
         elif(self.status=='ERROR'):
             P=GenericNack()
             P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
+            P.sequence_number=Integer(self.seq_numb,4)
             return P.encode()
     
 
