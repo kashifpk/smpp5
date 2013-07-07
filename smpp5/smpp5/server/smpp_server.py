@@ -65,6 +65,9 @@ class Server(object):
          record=DBSession.query(User).filter_by(user_id=system_id, password=passhash, system_type=system_type).first()
          if(record==None):
           self.status="ERROR"   
+          print("login failed")
+         else:
+	   print("login successfull")
         print("Encoded PDU sent from client and decoded is:  "+hex_convert(P.encode()))
         return P
 
