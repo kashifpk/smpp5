@@ -67,7 +67,7 @@ class Server(object):
           self.status="ERROR"   
           print("login failed")
          else:
-	   print("login successfull")
+          print("login successfull")
         print("Encoded PDU sent from client and decoded is:  "+hex_convert(P.encode()))
         return P
 
