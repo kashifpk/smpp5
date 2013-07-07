@@ -5,6 +5,7 @@ from smpp5.lib.constants import *
 from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
 from smpp5.lib.constants import interface_version as IV
+from smpp5.lib.pdu.login_check import LoginInfo
 from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag
 
 
@@ -16,11 +17,13 @@ class Client(object):
     PORT=''
     bind_pdu = ''
     seq_num = 1
+    smpplogin= LoginInfo()
     def __init__(self):
         self.state = 'CLOSED'
         self.conn = None
         #self.HOST = '127.0.0.1' 
         self.PORT = 50007
+        
         
     def connection(self):
         '''This method is responsible for creating socket and connecting to server'''
@@ -31,6 +34,7 @@ class Client(object):
             
     def disconnection(self):
         '''This method is responsible for ending session by calling Unbind PDU'''
+        print("*************Disconnecting The Session***************************")
         if self.state in ['BOUND_TX', 'BOUND_RX', 'BOUND_TRX']:
             self.Unbind()
             self.state='OPEN'
@@ -83,6 +87,13 @@ class Client(object):
         self.bind_pdu = bind_type
         pdu = P.encode()
         self.send_pdu(pdu)
+        if(self.state in ['BOUND_TX','BOUND_RX', 'BOUND_TRX']):
+         if(self.smpplogin.logged_in=='true'):
+            print()
+            print("Successfully login")
+            print()
+         else:
+            print("Oops! Login Failed.....")
         self.recieve()
         self.sequence_inc()
         
