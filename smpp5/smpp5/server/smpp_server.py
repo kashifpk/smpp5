@@ -17,7 +17,6 @@ class Server(object):
     status='CLOSED'
     decode_pdu='' 
     PORT = 50007
-    pdu_status=''
 
     def __init__(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,13 +36,11 @@ class Server(object):
 
     def recieve(self):
         '''This method is responsible for recieving encoded PDUs from Client and decode them'''
-        #read 4 bytes
         length = self.conn.recv(4)
         while len(length) < 4:
             #time.sleep(1)   # if bytes received from client are less than 4
             length += self.conn.recv(4-len(length))
         pdu_length = Integer.decode(length).value
-        print(pdu_length)
         pdu_str = length
         while len(pdu_str) != pdu_length:
             pdu_str += self.conn.recv(pdu_length-len(pdu_str))
@@ -59,22 +56,15 @@ class Server(object):
          self.status='BOUND_TRX'
         elif(P.command_id.value==6):
          P=UnBind.decode(pdu_str)   
-        self.status='UNBIND'
-
+         self.status='UNBIND'
         if type(P) in [BindTransmitter, BindReceiver, BindTransceiver]:
          db.bind_session()
          system_id=P.system_id.value.decode(encoding='ascii')
-         password=P.password.value.decode(encoding='ascii')
-         passhash = hashlib.sha1(bytes(password, encoding="utf8")).hexdigest()
+         passhash = hashlib.sha1(bytes(P.password.value.decode(encoding='ascii'), encoding="utf8")).hexdigest()
          system_type=P.system_type.value.decode(encoding='ascii')
-         #print(P.system_id.value)
-         for R in DBSession.query(User):
-          if(R.user_id==system_id and R.password==passhash and R.system_type==system_type):
-           self.pdu_status='accept'
-         if(self.pdu_status=='accept'):
-          pass
-         else:
-          self.status="ERROR"
+         record=DBSession.query(User).filter_by(user_id=system_id, password=passhash, system_type=system_type).first()
+         if(record==None):
+          self.status="ERROR"   
         print("Encoded PDU sent from client and decoded is:  "+hex_convert(P.encode()))
         return P
 
@@ -104,16 +94,15 @@ class Server(object):
             self.status='CLOSED'
     
         elif(self.status=='ERROR'):
-         P=GenericNack()
-         P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
-         return P.encode()
+            P=GenericNack()
+            P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
+            return P.encode()
     
 
 
 if __name__ == '__main__':
     #testing server
     servr=Server()
-    
     
     
     
