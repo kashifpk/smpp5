@@ -25,13 +25,14 @@ class Client(object):
             self.conn.connect((socket.gethostname(), self.PORT))
             self.state = 'OPEN'
             
-    def disconnection(self,):
+    def disconnection(self):
         if self.state in ['BOUND_TX', 'BOUND_RX', 'BOUND_TRX']:
             self.Unbind()
             self.state='OPEN'
-            self.conn.close()
             self.state = 'CLOSED'
-    
+            self.conn.close()
+            
+            
             
     def recieve(self):
         '''This method is responsible for recieving response PDUs and decoding them'''
