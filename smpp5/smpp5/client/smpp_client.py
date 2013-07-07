@@ -7,11 +7,15 @@ from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterRes
 from smpp5.lib.constants import interface_version as IV
 from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag
 
+
+
 class Client(object):
     '''Client Class is responsible to encode PDUs and send them to Server and also decode the response get from Server'''
     state=''
     conn=''
     PORT=''
+    bind_pdu = ''
+    seq_num = 1
     def __init__(self):
         self.state = 'CLOSED'
         self.conn = None
@@ -26,12 +30,15 @@ class Client(object):
             self.state = 'OPEN'
             
     def disconnection(self):
+        '''This method is responsible for ending session by calling Unbind PDU'''
         if self.state in ['BOUND_TX', 'BOUND_RX', 'BOUND_TRX']:
             self.Unbind()
             self.state='OPEN'
             self.state = 'CLOSED'
             self.conn.close()
             
+    def sequence_inc(self):
+        self.seq_num=self.seq_num+1
             
             
     def recieve(self):
@@ -40,70 +47,45 @@ class Client(object):
         while len(length) < 4:
             #time.sleep(1)   # if bytes received from client are less than 4
             length += self.conn.recv(4-len(length))
-
         pdu_length = Integer.decode(length).value
         pdu_str = length
         while len(pdu_str) != pdu_length:
             pdu_str += self.conn.recv(pdu_length-len(pdu_str))
-
+        print()
         P = PDU.decode(pdu_str)
         print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
+        
+    def send_pdu(self,pdu):
+        '''This method is responsible for sending encoded Bind PDUs'''
+        self.conn.send(pdu)
+        print("PDU that is encoded and sent to server is:  ")
+        print(pdu)
+        if(self.bind_pdu == 'BindTransmitter'):
+         self.state = 'BOUND_TX'
+        elif(self.bind_pdu == 'BindReceiver'):
+         self.state = 'BOUND_RX'
+        elif(self.bind_pdu == 'BindTransceiver'):
+         self.state = 'BOUND_TRX'
+        
             
-               
-    def Bindtransmitter(self):
-        '''This method is specifically for Bind Transmitter which encode this PDU and sent it to Server'''
+    def bind(self, bind_type, system_id, password, system_type):
+        ''' This method is responsible for getting parameters from user and encode required bind PDU'''
         if self.state in ['CLOSED']:
             self.connection()
-        if self.state in ['OPEN', 'BOUND_RX', 'BOUND_TRX']:
-            P = BindTransmitter() 
-            P.system_id = CString("SMPP3TEST")
-            P.password = CString("secret08")
-            P.system_type = CString("SUBMIT1") 
-            pdu = P.encode()
-            self.conn.send(pdu)
-            print("****************BIND TRANSMITTER*********************** ")
-            print("PDU that is encoded and sent to server is:  ")
-            print(pdu)
-            self.state = 'BOUND_TX'
-            self.recieve()
-            print()
-            
-    def Bindreceiver(self):
-        '''This method is specifically for Bind Receiver which encode this PDU and sent it to Server'''
-        if self.state in ['CLOSED']:
-            self.connection()
-        if self.state in ['OPEN', 'BOUND_TX', 'BOUND_TRX']:
-            P = BindReceiver()
-            P.system_id = CString("SMPP3TEST")
-            P.password = CString("secret08")
-            P.system_type = CString("SUBMIT1")
-            pdu = P.encode()
-            self.conn.send(pdu)
-            print("******************BIND RECEIVER*************************  ")
-            print("PDU that is encoded and sent to server is:  ")
-            print(pdu)
-            self.state = 'BOUND_RX'
-            self.recieve()
-            print()
-            
-    def Bindtransceiver(self):
-        '''This method is specifically for Bind Transceiver which encode this PDU and sent it to Server'''
-        if self.state in ['CLOSED']:
-            self.connection()
-        elif self.state in ['OPEN', 'BOUND_TX', 'BOUND_RX']:
-            P = BindTransceiver()
-            P.system_id = CString("SMPP3TEST")
-            P.password = CString("secret08")
-            P.system_type = CString("SUBMIT1")
-            pdu = P.encode()
-            self.conn.send(pdu)
-            print("******************BIND TRANSCEIVER************************ ")
-            print("PDU that is encoded and sent to server is:  ")
-            print(pdu)
-            print()
-            self.state = 'BOUND_TRX'
-            self.recieve()
-            print()
+        print("****************"+bind_type+"*********************** ")
+        pdu_name = bind_type
+        pdu_name = eval(pdu_name)
+        P = pdu_name()
+        P.sequence_number = Integer(self.seq_num,4)
+        P.system_id = CString(system_id)
+        P.password = CString(password)
+        P.system_type = CString(system_type)
+        self.bind_pdu = bind_type
+        pdu = P.encode()
+        self.send_pdu(pdu)
+        self.recieve()
+        self.sequence_inc()
+        
             
     def Unbind(self):
         ''' this method is for sending UNBIND PDU to server by encoding it'''
@@ -111,28 +93,22 @@ class Client(object):
             self.connection()
         elif self.state in ['BOUND_TX', 'BOUND_RX', 'BOUND_TRX']:
             P = UnBind()
+            P.sequence_number = Integer(self.seq_num,4)
             pdu = P.encode()
-            self.conn.send(pdu)
-            print("****************UNBIND************************ ")
-            print("PDU that is encoded and sent to server is:  ")
-            print(pdu)
-            print()
-            self.state = 'UNBIND'
+            self.send_pdu(pdu)
             self.recieve()
-            
-        pass
-    
-            
-           
+            self.state = 'UNBIND'
+            self.sequence_inc()
+                  
         
 if __name__ == '__main__':
     #Testing client
     client=Client()
     client.connection()
-    client.Bindtransmitter() 
+    client.bind('BindTransceiver','SMPP3TEST','secret08','SUBMIT1') 
     #client.Bindreceiver()
     #client.Bindtransceiver()
-    client.Unbind()
+    #client.Unbind()
     client.disconnection()
     
     
