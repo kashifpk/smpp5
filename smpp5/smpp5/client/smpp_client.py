@@ -5,7 +5,6 @@ from smpp5.lib.constants import *
 from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.pdu.login_check import LoginInfo
 from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag
 
 
@@ -17,7 +16,6 @@ class Client(object):
     PORT=''
     bind_pdu = ''
     seq_num = 0
-    smpplogin= LoginInfo()
     def __init__(self):
         self.state = 'CLOSED'
         self.conn = None
@@ -56,7 +54,6 @@ class Client(object):
         pdu_str = length
         while len(pdu_str) != pdu_length:
             pdu_str += self.conn.recv(pdu_length-len(pdu_str))
-        print()
         P = PDU.decode(pdu_str)
         print("the response that is recieved and decoded is : "+hex_convert(P.encode(), 150))
         
@@ -88,13 +85,6 @@ class Client(object):
         self.bind_pdu = bind_type
         pdu = P.encode()
         self.send_pdu(pdu)
-        if(self.state in ['BOUND_TX','BOUND_RX', 'BOUND_TRX']):
-         if(self.smpplogin.logged_in=='true'):
-            print()
-            print("Successfully login")
-            print()
-         else:
-            print("Oops! Login Failed.....")
         self.recieve()
         self.sequence_inc()
         
@@ -117,7 +107,7 @@ if __name__ == '__main__':
     #Testing client
     client=Client()
     client.connection()
-    client.bind('BindTransceiver','SMPP3TEST','secret08','SUBMIT1') 
+    client.bind('BindTransmitter','SMPP3TEST','secret08','SUBMIT1') 
     #client.Bindreceiver()
     #client.Bindtransceiver()
     #client.Unbind()
