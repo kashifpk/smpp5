@@ -16,7 +16,7 @@ class Client(object):
     conn=''
     PORT=''
     bind_pdu = ''
-    seq_num = 1
+    seq_num = 0
     smpplogin= LoginInfo()
     def __init__(self):
         self.state = 'CLOSED'
