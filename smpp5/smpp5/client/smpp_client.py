@@ -23,6 +23,7 @@ class Client(object):
         self.conn = None
         #self.HOST = '127.0.0.1' 
         self.PORT = 50007
+        self.sequence_inc()
         
         
     def connection(self):
