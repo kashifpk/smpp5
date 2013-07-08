@@ -6,7 +6,6 @@ from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status,
 from smpp5.lib.constants.command_status import *
 from smpp5.lib.pdu.session_management import BindTransmitter, BindTransmitterResp, BindReceiver, BindReceiverResp, BindTransceiver, BindTransceiverResp, OutBind, UnBind, UnBindResp, EnquireLink, EnquireLinkResp, AlertNotification, GenericNack
 from smpp5.lib.pdu.pdu import PDU
-from smpp5.lib.pdu.login_check import LoginInfo
 import db
 from db import DBSession
 from models import User
@@ -26,7 +25,6 @@ class Server(object):
         self.server.listen(1)
         print(b'Server is listening')
         self.status='OPEN'
-        smpplogin= LoginInfo()
         (self.conn, addr) = self.server.accept()
         print('Connected by' + str(addr))
         print()
@@ -64,14 +62,13 @@ class Server(object):
          self.status='UNBIND'
         if type(P) in [BindTransmitter, BindReceiver, BindTransceiver]:
          db.bind_session()
-         system_id=P.system_id.value.decode(encoding='ascii')
+         system_id = P.system_id.value.decode(encoding='ascii')
          passhash = hashlib.sha1(bytes(P.password.value.decode(encoding='ascii'), encoding="utf8")).hexdigest()
          system_type=P.system_type.value.decode(encoding='ascii')
          record=DBSession.query(User).filter_by(user_id=system_id, password=passhash, system_type=system_type).first()
          if(record==None):
           self.status="ERROR"
-         else:
-          self.smpplogin.logged_in = 'true'
+          
         print("Encoded PDU sent from client and decoded is:  "+hex_convert(P.encode()))
         print()
         return P
@@ -82,7 +79,8 @@ class Server(object):
             P = BindTransmitterResp()
             P.sequence_number=Integer(self.seq_numb,4)
             P.system_id = CString("SMPP3TEST")
-            return P.encode()
+            P = P.encode()
+            return P
 
         elif(self.status=='BOUND_RX'):
     
