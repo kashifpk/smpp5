@@ -11,7 +11,7 @@ from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from collections import OrderedDict
 
 
-class OrderedMeta(type):    
+class OrderedMeta(type):
     '''OrderedDict tracks the insertion order'''
     @classmethod
     def __prepare__(metacls, name, bases):
