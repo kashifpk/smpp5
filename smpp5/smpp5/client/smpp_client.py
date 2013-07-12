@@ -28,7 +28,7 @@ class SMPPClient(object):
         self.socket.close()
 
     def login(self, mode, system_id, password, system_type):
-        pass
+        self.session.bind(mode, system_id, password, system_type)
 
 
 if __name__ == '__main__':

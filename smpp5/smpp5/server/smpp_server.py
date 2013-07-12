@@ -21,6 +21,9 @@ def handle_client_connection(conn, addr):
     """
 
     print("Accepted connection from: " + repr(addr))
+    server_session = SMPPSession('server', conn)
+
+    server_session.handle_bind()
 
     time.sleep(5)
     conn.close()

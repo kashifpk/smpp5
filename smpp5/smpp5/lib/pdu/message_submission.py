@@ -1,12 +1,12 @@
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.pdu.pdu import PDU
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.constants import NPI, TON, esm_class, command_id, command_status, tlv_tag, dest_flag
+from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status, tlv_tag, dest_flag
 
 class SubmitSm(PDU):
     "Submit Sm PDU type"
 
-    command_id = Integer(command_id.submit_sm, 4)
+    command_id = Integer(command_ids.submit_sm, 4)
     service_type = CString("")
     source_addr_ton = Integer(TON.INTERNATIONAL, 1)
     source_addr_npi = Integer(NPI.ISDN, 1)
@@ -30,14 +30,14 @@ class SubmitSm(PDU):
 class SubmitSmResp(PDU):
     "Submit Sm Response PDU type"
 
-    command_id = Integer(command_id.submit_sm_resp, 4)
+    command_id = Integer(command_ids.submit_sm_resp, 4)
     message_id = CString("")
     #message submission response TLV
 
 class DataSm(PDU):
     "Data Sm PDU type"
 
-    command_id = Integer(command_id.data_sm, 4)
+    command_id = Integer(command_ids.data_sm, 4)
     service_type = CString("")
     source_addr_ton = Integer(TON.INTERNATIONAL, 1)
     source_addr_npi = Integer(NPI.ISDN, 1)
@@ -53,14 +53,14 @@ class DataSm(PDU):
 class DataSmResp(PDU):
     "Data Sm Response PDU type"
 
-    command_id = Integer(command_id.data_sm_resp, 4)
+    command_id = Integer(command_ids.data_sm_resp, 4)
     message_id = CString("")
     #message submission response TLV
     
 class SubmitMulti(PDU):
     "Submit Multi PDU type"
 
-    command_id = Integer(command_id.submit_multi, 4)
+    command_id = Integer(command_ids.submit_multi, 4)
     service_type = CString("")
     source_addr_ton = Integer(TON.INTERNATIONAL, 1)
     source_addr_npi = Integer(NPI.ISDN, 1)
@@ -88,7 +88,7 @@ class SubmitMulti(PDU):
 class SubmitMultiResp(PDU):
     "Submit Multi Response PDU type"
 
-    command_id = Integer(command_id.submit_multi_resp, 4)
+    command_id = Integer(command_ids.submit_multi_resp, 4)
     message_id = CString("")
     no_unsuccess = Integer(0, 1)            #page 129
     dest_addr_ton = Integer(TON.INTERNATIONAL, 1)
