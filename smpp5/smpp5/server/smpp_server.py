@@ -22,9 +22,8 @@ def handle_client_connection(conn, addr):
 
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
-
-    server_session.handle_bind()
-
+    server_session.handle_bind(SMPPServer.validate)
+    print("waiting.......")
     time.sleep(5)
     conn.close()
 
@@ -60,6 +59,21 @@ class SMPPServer(object):
 
         except (KeyboardInterrupt, SystemExit):
             print("Good bye!")
+
+
+
+    def validate(system_id, password, system_type):
+        db.bind_session()
+        system_id = system_id.decode(encoding='ascii')
+        passhash = hashlib.sha1(bytes(password.decode(encoding='ascii'), encoding="utf8")).hexdigest()
+        system_type=system_type.decode(encoding='ascii')
+        record=DBSession.query(User).filter_by(user_id = system_id, password = passhash, system_type = system_type).first()
+        if(record):
+         print("Validation Done !!!")
+         return 'True'
+        else:
+         print("Validation failed")
+         return 'false'
 
 
 if __name__ == '__main__':
