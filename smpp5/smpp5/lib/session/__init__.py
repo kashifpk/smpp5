@@ -60,6 +60,7 @@ class SMPPSession(object):
         self.socket = socket
         self.state = SessionState.OPEN
         self._seq_num = 0
+        self.server_validate_method = ''
 
     def _next_seq_num(self):
         self._seq_num += 1
@@ -105,19 +106,23 @@ class SMPPSession(object):
 
         self.socket.sendall(data)
 
-    def handle_bind(self):
+    def handle_bind(self, validate):
         """
         Used by the server to handle the incoming bind request
         """
 
         P = self.get_pdu_from_socket()
+        self.server_validate_method = validate
         print("Received PDU: " + P.__class__.__name__)
+        pdu_name = dict(BindTransmitter = SessionState.BOUND_TX, BindReceiver =SessionState.BOUND_RX, BindTransceiver = SessionState.BOUNT_TRX)
+        if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
+         validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
+         self.state = pdu_name[P.__class__.__name__]
         print(P.system_id.value)
         print(P.password.value)
         print(P.system_type.value)
 
-        #TODO: Validate this against DB here. Set session state according to validation results and
-        # send appropriate response or generick nack PDU back through self.socket.
+        #TODO: send appropriate response or generick nack PDU back through self.socket.
 
     #def send_sms(self, other_parameters):
     #
