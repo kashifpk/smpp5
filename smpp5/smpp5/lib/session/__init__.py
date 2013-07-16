@@ -40,7 +40,7 @@ class SessionState(object):
     OPEN = 1
     BOUND_TX = 2
     BOUND_RX = 3
-    BOUNT_TRX = 4
+    BOUND_TRX = 4
     UNBOUND = 5
     OUTBOUND = 6
 
@@ -98,13 +98,13 @@ class SMPPSession(object):
         )
 
         P = bind_types[bind_type]['request']()
-        P.sequence_number = self._next_seq_num()
+        P.sequence_number = Integer(self._next_seq_num(),4)
         P.system_id = CString(system_id)
         P.password = CString(password)
         P.system_type = CString(system_type)
         data = P.encode()
-
         self.socket.sendall(data)
+
 
     def handle_bind(self, validate):
         """
@@ -112,15 +112,53 @@ class SMPPSession(object):
         """
 
         P = self.get_pdu_from_socket()
+        
         self.server_validate_method = validate
         print("Received PDU: " + P.__class__.__name__)
-        pdu_name = dict(BindTransmitter = SessionState.BOUND_TX, BindReceiver =SessionState.BOUND_RX, BindTransceiver = SessionState.BOUNT_TRX)
+        
+        pdu_name = dict(BindTransmitter = SessionState.BOUND_TX, BindReceiver =SessionState.BOUND_RX, BindTransceiver = SessionState.BOUND_TRX)
+       
         if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
          validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
-         self.state = pdu_name[P.__class__.__name__]
+         if(validate == 'True'):
+          self.state = pdu_name[P.__class__.__name__]
+          self.send_response(P.__class__.__name__, P.system_id.value)
+         else:
+          self.generic_response()
+         
         print(P.system_id.value)
         print(P.password.value)
         print(P.system_type.value)
+        
+        
+        
+    def send_response(self, pdu_type, system_id ):
+        bind_resp = dict(
+            BindTransmitter=dict(response=BindTransmitterResp),
+            BindReceiver=dict(response=BindReceiverResp),
+            BindTransceiver=dict(response=BindTransceiverResp)
+            )
+        
+        P = bind_resp[pdu_type]['response']()
+        P.sequence_number = Integer(self._next_seq_num(),4)
+        P.system_id = CString(system_id)
+        data = P.encode()
+        self.socket.sendall(data)
+        
+        
+    def generic_response(self):
+        P = GenericNack()
+        P.sequence_number = Integer(self._next_seq_num(),4)
+        P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
+        data = P.encode()
+        self.socket.sendall(data)
+        
+        
+    def handle_response(self):
+        P = self.get_pdu_from_socket()
+
+    
+    
 
         #TODO: send appropriate response or generick nack PDU back through self.socket.
 
