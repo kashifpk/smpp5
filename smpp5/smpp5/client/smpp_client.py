@@ -29,11 +29,12 @@ class SMPPClient(object):
 
     def login(self, mode, system_id, password, system_type):
         self.session.bind(mode, system_id, password, system_type)
+        self.session.handle_response()
 
 
 if __name__ == '__main__':
     #Testing client
     client = SMPPClient()
     client.connect('127.0.0.1', 1337)
-    client.login('TX', 'SMPP3TEST', 'secret08', 'SUBMIT1')
+    client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
     client.disconnect()
