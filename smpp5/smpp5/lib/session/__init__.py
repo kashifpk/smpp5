@@ -6,7 +6,7 @@ SMPPSession class is used to handle SMPP Sessions between client and server, bot
 server create an instance of SMPPSession to communicate with each other.
 
 """
-
+import sys
 import socket
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.util.hex_print import hex_convert, hex_print
@@ -68,6 +68,14 @@ class SMPPSession(object):
         self.state = SessionState.OPEN
         self._seq_num = 0
         self.server_validate_method = ''
+        
+    #def close_session(self):
+        #self.session_end = ''
+        #self.socket = ''
+        #self.state = SessionState.UNBOUND
+        #self._seq_num = 0
+        #sys.exit(1)
+        
 
     def _next_seq_num(self):
         self._seq_num += 1
@@ -79,14 +87,14 @@ class SMPPSession(object):
         """
         #First wait till 4 bytes a read from the socket (command_length)
         d = self.socket.recv(4, socket.MSG_WAITALL)
-        command_length = Integer.decode(d)
+        command_length = Integer.decode(d) # decode first four bytes to get the command length via it 
 
         # get bytes specified by command_length - 4
         sock_data = self.socket.recv(command_length.value - 4, socket.MSG_WAITALL)
         sock_data = d + sock_data
 
-        command_id = Integer.decode(sock_data[4:8])
-        PDUClass = command_mappings[command_id.value]
+        command_id = Integer.decode(sock_data[4:8]) # decode from 5th byte till 8th to get command_id
+        PDUClass = command_mappings[command_id.value] #get the class name via command_id
 
         # decode PDU
         P = PDUClass.decode(sock_data)
@@ -147,7 +155,8 @@ class SMPPSession(object):
             )
         
         P = bind_resp[pdu_type]['response']()
-        P.sequence_number = Integer(self._seq_num,4)
+        P.sequence_number = Integer(self._next_seq_num(),4)
+        #print("sequence_number  "+P.sequence_number)
         P.system_id = CString(system_id)
         data = P.encode()
         self.socket.sendall(data)
@@ -155,6 +164,7 @@ class SMPPSession(object):
         
         
     def generic_response(self):
+    
         P = GenericNack()
         P.sequence_number = Integer(self._next_seq_num(),4)
         P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
@@ -163,13 +173,40 @@ class SMPPSession(object):
         
         
     def handle_response(self):
-        P = self.get_pdu_from_socket()
+    
+      P = self.get_pdu_from_socket()
+
+    #def unbind(self):
+    
+      #''' this method is for sending UNBIND PDU to server by encoding it'''
+      ##if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX, SessionState.OUTBOUND, SessionState.CLOSED, SessionState.OPEN]:
+      #P = UnBind()
+      #P.sequence_number = Integer(self._next_seq_num(),4)
+      #data = P.encode()
+      #self.socket.sendall(data)
 
     
+    #def handle_unbind(self):
+      
+      #P = self.get_pdu_from_socket()
+      #if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX, SessionState.OUTBOUND, SessionState.CLOSED, SessionState.OPEN]:
+         #self.state = SessionState.UNBOUND 
+         #self.send_unbind_response()
+      
     
-
-        #TODO: send appropriate response or generick nack PDU back through self.socket.
-
+    #def send_unbind_response(self):
+      
+      #P.sequence_number = Integer(self._next_seq_num(),4)
+      #data = P.encode()
+      #self.socket.sendall(data)
+      #print("   UNBIND Response pdu sent to client by server   ")
+      
+      
+    #def handle_unbind_response(self):
+      
+      #P = self.get_pdu_from_socket()
+      
+    
     #def send_sms(self, other_parameters):
       
       #if self.state not in ['bound_tx', 'bound_trx']:

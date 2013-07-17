@@ -26,10 +26,16 @@ class SMPPClient(object):
     def disconnect(self):
         #TODO: close SMPPSession if not already closed
         self.socket.close()
+        #self.session.close_session()
 
     def login(self, mode, system_id, password, system_type):
         self.session.bind(mode, system_id, password, system_type)
         self.session.handle_response()
+        
+    #def logoff(self):
+        #self.session.unbind()
+        #self.session.handle_unbind_response()
+        #self.session.close_session()
 
 
 if __name__ == '__main__':
@@ -37,4 +43,5 @@ if __name__ == '__main__':
     client = SMPPClient()
     client.connect('127.0.0.1', 1337)
     client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
+    #client.logoff()
     client.disconnect()
