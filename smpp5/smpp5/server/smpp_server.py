@@ -22,9 +22,12 @@ def handle_client_connection(conn, addr):
 
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
-    server_session.handle_bind(SMPPServer.validate)
+    server_session.handle_bind(SMPPServer.validate) # passing validate function name to handle_bind method to let the session instance call it 
     print("waiting.......")
     time.sleep(5)
+    
+    #server_session.handle_unbind()
+    
     conn.close()
 
 
@@ -44,12 +47,12 @@ class SMPPServer(object):
             host = ''
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((host, port))
+        self.socket.bind((host, port)) #built-in method 
 
         try:
             while True:
-                self.socket.listen(1)
-                conn, addr = self.socket.accept()
+                self.socket.listen(1) #listening for connections
+                conn, addr = self.socket.accept() # accept connections and return ip and port 
 
                 P = multiprocessing.Process(target=handle_client_connection, args=(conn, addr))
                 P.start()
@@ -58,6 +61,7 @@ class SMPPServer(object):
                 print("Active connections: %i" % len(active_conns))
 
         except (KeyboardInterrupt, SystemExit):
+            #self.socket.unbind()
             print("Good bye!")
 
 
