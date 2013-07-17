@@ -140,7 +140,7 @@ class SMPPSession(object):
             )
         
         P = bind_resp[pdu_type]['response']()
-        P.sequence_number = Integer(self._next_seq_num(),4)
+        P.sequence_number = Integer(self._seq_num,4)
         P.system_id = CString(system_id)
         data = P.encode()
         self.socket.sendall(data)
