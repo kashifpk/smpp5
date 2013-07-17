@@ -29,6 +29,13 @@ from smpp5.lib.pdu.session_management import (
     EnquireLinkResp,
     AlertNotification,
     GenericNack)
+from smpp5.lib.pdu.message_submission import (
+    SubmitSm,
+    SubmitSmResp,
+    DataSm,
+    DataSmResp,
+    SubmitMulti,
+    SubmitMultiResp)
 
 
 class SessionState(object):
@@ -43,7 +50,7 @@ class SessionState(object):
     BOUND_TRX = 4
     UNBOUND = 5
     OUTBOUND = 6
-
+    
 
 class SMPPSession(object):
 
@@ -144,6 +151,7 @@ class SMPPSession(object):
         P.system_id = CString(system_id)
         data = P.encode()
         self.socket.sendall(data)
+        print("    Response pdu sent to client by server   ")
         
         
     def generic_response(self):
@@ -163,7 +171,7 @@ class SMPPSession(object):
         #TODO: send appropriate response or generick nack PDU back through self.socket.
 
     #def send_sms(self, other_parameters):
-    #
-    #    if self.state not in ['bound_tx', 'bound_trx']:
-    #        raise Exception("SMPP Session not in a state that allows sending SMSes")
+      
+      #if self.state not in ['bound_tx', 'bound_trx']:
+           #raise Exception("SMPP Session not in a state that allows sending SMSes")
 

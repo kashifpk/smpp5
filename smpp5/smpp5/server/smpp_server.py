@@ -69,7 +69,7 @@ class SMPPServer(object):
         system_type=system_type.decode(encoding='ascii')
         record=DBSession.query(User).filter_by(user_id = system_id, password = passhash, system_type = system_type).first()
         if(record):
-         print("Validation Done !!!")
+         print("Credentials Validated successfully!!!")
          return 'True'
         else:
          print("Validation failed")
