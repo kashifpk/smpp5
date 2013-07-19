@@ -25,13 +25,14 @@ class SMPPClient(object):
 
     def disconnect(self):
         #TODO: close SMPPSession if not already closed
+        self.session.close()
         self.socket.close()
-        #self.session.close_session()
+        #
 
     def login(self, mode, system_id, password, system_type):
         self.session.bind(mode, system_id, password, system_type)
         self.session.handle_response()
-        
+
     #def logoff(self):
         #self.session.unbind()
         #self.session.handle_unbind_response()

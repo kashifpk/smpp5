@@ -50,7 +50,7 @@ class SessionState(object):
     BOUND_TRX = 4
     UNBOUND = 5
     OUTBOUND = 6
-    
+
 
 class SMPPSession(object):
 
@@ -68,14 +68,6 @@ class SMPPSession(object):
         self.state = SessionState.OPEN
         self._seq_num = 0
         self.server_validate_method = ''
-        
-    #def close_session(self):
-        #self.session_end = ''
-        #self.socket = ''
-        #self.state = SessionState.UNBOUND
-        #self._seq_num = 0
-        #sys.exit(1)
-        
 
     def _next_seq_num(self):
         self._seq_num += 1
@@ -83,23 +75,46 @@ class SMPPSession(object):
 
     def get_pdu_from_socket(self):
         """
-        Given a socket, returns a completed PDU
+        Given a socket, returns a completed PDU and blocks until a PDU is received
         """
         #First wait till 4 bytes a read from the socket (command_length)
         d = self.socket.recv(4, socket.MSG_WAITALL)
-        command_length = Integer.decode(d) # decode first four bytes to get the command length via it 
+        command_length = Integer.decode(d)  # decode first four bytes to get the command length via it 
 
         # get bytes specified by command_length - 4
         sock_data = self.socket.recv(command_length.value - 4, socket.MSG_WAITALL)
         sock_data = d + sock_data
 
-        command_id = Integer.decode(sock_data[4:8]) # decode from 5th byte till 8th to get command_id
-        PDUClass = command_mappings[command_id.value] #get the class name via command_id
+        command_id = Integer.decode(sock_data[4:8])    # decode from 5th byte till 8th to get command_id
+        PDUClass = command_mappings[command_id.value]  # get the class name via command_id
 
         # decode PDU
         P = PDUClass.decode(sock_data)
 
         return P
+
+    def handle_pdu(self, P):
+        """
+        Given a PDU P, calls appropriate methods to handle it.
+        """
+        if command_ids.submit_sm == P.command_id:
+            pass
+
+    def close(self):
+        # if session stat is one of the bound states, unbind it.
+        if session.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            P = UnBind()
+            P.sequence_number = _next_seq_num()
+            self.socket.sendall(P.encode())
+            session.state = SessionState.UNBOUND
+
+        # wait for the server to send UnBindResp and then close the session
+        resp_pdu = self.get_pdu_from_socket()
+        while resp_pdu.command_id != command_ids.unbind_resp:
+            self.handle_pdu(resp_pdu)
+            resp_pdu = self.get_pdu_from_socket()
+
+        self.state = SessionState.CLOSED
 
     def bind(self, bind_type, system_id, password, system_type):
         """
@@ -113,13 +128,12 @@ class SMPPSession(object):
         )
 
         P = bind_types[bind_type]['request']()
-        P.sequence_number = Integer(self._next_seq_num(),4)
+        P.sequence_number = Integer(self._next_seq_num(), 4)
         P.system_id = CString(system_id)
         P.password = CString(password)
         P.system_type = CString(system_type)
         data = P.encode()
         self.socket.sendall(data)
-
 
     def handle_bind(self, validate):
         """
@@ -127,33 +141,33 @@ class SMPPSession(object):
         """
 
         P = self.get_pdu_from_socket()
-        
+
         self.server_validate_method = validate
         print("Received PDU: " + P.__class__.__name__)
-        
-        pdu_name = dict(BindTransmitter = SessionState.BOUND_TX, BindReceiver =SessionState.BOUND_RX, BindTransceiver = SessionState.BOUND_TRX)
-       
+
+        pdu_name = dict(BindTransmitter=SessionState.BOUND_TX,
+                        BindReceiver=SessionState.BOUND_RX,
+                        BindTransceiver=SessionState.BOUND_TRX)
+
         if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
-         validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
-         if(validate == 'True'):
-          self.state = pdu_name[P.__class__.__name__]
-          self.send_response(P.__class__.__name__, P.system_id.value)
-         else:
-          self.generic_response()
-         
+            validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
+            if(validate == 'True'):
+                self.state = pdu_name[P.__class__.__name__]
+                self.send_response(P.__class__.__name__, P.system_id.value)
+            else:
+                self.generic_response()
+
         print(P.system_id.value)
         print(P.password.value)
         print(P.system_type.value)
-        
-        
-        
-    def send_response(self, pdu_type, system_id ):
+
+    def send_response(self, pdu_type, system_id):
         bind_resp = dict(
             BindTransmitter=dict(response=BindTransmitterResp),
             BindReceiver=dict(response=BindReceiverResp),
             BindTransceiver=dict(response=BindTransceiverResp)
-            )
-        
+        )
+
         P = bind_resp[pdu_type]['response']()
         P.sequence_number = Integer(self._next_seq_num(),4)
         #print("sequence_number  "+P.sequence_number)
@@ -161,20 +175,18 @@ class SMPPSession(object):
         data = P.encode()
         self.socket.sendall(data)
         print("    Response pdu sent to client by server   ")
-        
-        
+
     def generic_response(self):
-    
+
         P = GenericNack()
         P.sequence_number = Integer(self._next_seq_num(),4)
-        P.command_status= Integer(command_status.ESME_RBINDFAIL, 4)
+        P.command_status = Integer(command_status.ESME_RBINDFAIL, 4)
         data = P.encode()
         self.socket.sendall(data)
-        
-        
+
     def handle_response(self):
-    
-      P = self.get_pdu_from_socket()
+
+        P = self.get_pdu_from_socket()
 
     #def unbind(self):
     
