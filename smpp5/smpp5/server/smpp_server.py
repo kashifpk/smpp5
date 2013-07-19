@@ -22,7 +22,8 @@ def handle_client_connection(conn, addr):
 
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
-    server_session.handle_bind(SMPPServer.validate) # passing validate function name to handle_bind method to let the session instance call it 
+    server_session.handle_bind(SMPPServer.validate) # passing validate function name to handle_bind method to let the session instance call it
+    server_session.handle_unbind()
     print("waiting.......")
     time.sleep(5)
     

@@ -97,20 +97,21 @@ class SMPPSession(object):
         """
         Given a PDU P, calls appropriate methods to handle it.
         """
-        if command_ids.submit_sm == P.command_id:
+        if command_ids.submit_sm == P.command_id.value:
             pass
 
     def close(self):
         # if session stat is one of the bound states, unbind it.
-        if session.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             P = UnBind()
             P.sequence_number = _next_seq_num()
             self.socket.sendall(P.encode())
-            session.state = SessionState.UNBOUND
+            self.state = SessionState.UNBOUND
 
+        # Because communication is asynchronous, we never know before unbind pdu.some other pdu would come,to handle it, this piece of code has been written 
         # wait for the server to send UnBindResp and then close the session
         resp_pdu = self.get_pdu_from_socket()
-        while resp_pdu.command_id != command_ids.unbind_resp:
+        while resp_pdu.command_id.value != command_ids.unbind_resp.value:
             self.handle_pdu(resp_pdu)
             resp_pdu = self.get_pdu_from_socket()
 
@@ -129,6 +130,8 @@ class SMPPSession(object):
 
         P = bind_types[bind_type]['request']()
         P.sequence_number = Integer(self._next_seq_num(), 4)
+        print("P.sequence_number.value in bind")
+        print(P.sequence_number.value)
         P.system_id = CString(system_id)
         P.password = CString(password)
         P.system_type = CString(system_type)
@@ -170,14 +173,8 @@ class SMPPSession(object):
 
         P = bind_resp[pdu_type]['response']()
         P.sequence_number = Integer(self._next_seq_num(),4)
-<<<<<<< HEAD
-<<<<<<< HEAD
-        #print("sequence_number  "+P.sequence_number)
-=======
->>>>>>> 4405f92be6c9d242da2f4e5ca7af1e145a6ccd3f
-=======
-        #print("sequence_number  "+P.sequence_number)
->>>>>>> 9cec4705b828b92c0010a66543331f737dc622db
+        print("P.sequence_number.value in response")
+        print(P.sequence_number.value)
         P.system_id = CString(system_id)
         data = P.encode()
         self.socket.sendall(data)
@@ -195,23 +192,14 @@ class SMPPSession(object):
 
         P = self.get_pdu_from_socket()
 
-    #def unbind(self):
+    def unbind(self):
     
-      #''' this method is for sending UNBIND PDU to server by encoding it'''
-      ##if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX, SessionState.OUTBOUND, SessionState.CLOSED, SessionState.OPEN]:
-      #P = UnBind()
-      #P.sequence_number = Integer(self._next_seq_num(),4)
-      #data = P.encode()
-      #self.socket.sendall(data)
-
+        ''' this method is for sending UNBIND PDU to server by encoding it'''
+        self.close()
     
-    #def handle_unbind(self):
+    def handle_unbind(self):
       
-      #P = self.get_pdu_from_socket()
-      #if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX, SessionState.OUTBOUND, SessionState.CLOSED, SessionState.OPEN]:
-         #self.state = SessionState.UNBOUND 
-         #self.send_unbind_response()
-      
+        self.close()
     
     #def send_unbind_response(self):
       
