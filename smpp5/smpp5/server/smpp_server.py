@@ -22,14 +22,14 @@ def handle_client_connection(conn, addr):
 
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
-    server_session.handle_bind(SMPPServer.validate) # passing validate function name to handle_bind method to let the session instance call it
+    server_session.handle_bind(SMPPServer.validate) # passing validate function name to handle_bind method to let the session instance call it 
     server_session.handle_unbind()
-    print("waiting.......")
     time.sleep(5)
+    conn.close()
     
     #server_session.handle_unbind()
     
-    conn.close()
+    
 
 
 class SMPPServer(object):
@@ -53,6 +53,7 @@ class SMPPServer(object):
         try:
             while True:
                 self.socket.listen(1) #listening for connections
+                print("listening......")
                 conn, addr = self.socket.accept() # accept connections and return ip and port 
 
                 P = multiprocessing.Process(target=handle_client_connection, args=(conn, addr))
