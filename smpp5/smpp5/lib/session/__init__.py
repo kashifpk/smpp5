@@ -97,25 +97,24 @@ class SMPPSession(object):
         """
         Given a PDU P, calls appropriate methods to handle it.
         """
-        if command_ids.submit_sm == P.command_id.value:
+        if command_ids.submit_sm == P.command_id:
             pass
 
     def close(self):
         # if session stat is one of the bound states, unbind it.
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             P = UnBind()
-            P.sequence_number = _next_seq_num()
+            P.sequence_number = Integer(self._next_seq_num(),4)
             self.socket.sendall(P.encode())
             self.state = SessionState.UNBOUND
 
-        # Because communication is asynchronous, we never know before unbind pdu.some other pdu would come,to handle it, this piece of code has been written 
         # wait for the server to send UnBindResp and then close the session
         resp_pdu = self.get_pdu_from_socket()
-        while resp_pdu.command_id.value != command_ids.unbind_resp.value:
-            self.handle_pdu(resp_pdu)
-            resp_pdu = self.get_pdu_from_socket()
-
+        #while resp_pdu.command_id != command_ids.unbind_resp:
+        #    self.handle_pdu(resp_pdu)
+        #    resp_pdu = self.get_pdu_from_socket()
         self.state = SessionState.CLOSED
+
 
     def bind(self, bind_type, system_id, password, system_type):
         """
@@ -123,96 +122,77 @@ class SMPPSession(object):
         """
         # try sending the appropriate bind type PDU ('RX', 'TX', 'TRX') and fetch return value
         bind_types = dict(
-            TX=dict(request=BindTransmitter, response=BindTransmitterResp),
-            RX=dict(request=BindReceiver, response=BindReceiverResp),
-            TRX=dict(request=BindTransceiver, response=BindTransceiverResp)
-        )
-
+            TX=dict(request=BindTransmitter, response=BindTransmitterResp, state=SessionState.BOUND_TX),
+            RX=dict(request=BindReceiver, response=BindReceiverResp ,state=SessionState.BOUND_RX),
+            TRX=dict(request=BindTransceiver, response=BindTransceiverResp, state=SessionState.BOUND_TRX)
+        )    
+        self.state = bind_types[bind_type]['state']
         P = bind_types[bind_type]['request']()
         P.sequence_number = Integer(self._next_seq_num(), 4)
-        print("P.sequence_number.value in bind")
-        print(P.sequence_number.value)
         P.system_id = CString(system_id)
         P.password = CString(password)
         P.system_type = CString(system_type)
         data = P.encode()
         self.socket.sendall(data)
-
+        print("    Bind pdu sent to server by client   ")
+        
+        #recieving the response from server
+        P = self.get_pdu_from_socket()
+       
+       
     def handle_bind(self, validate):
         """
         Used by the server to handle the incoming bind request
         """
-
+        
+        #recieving bind pdu from client
         P = self.get_pdu_from_socket()
-
         self.server_validate_method = validate
         print("Received PDU: " + P.__class__.__name__)
 
-        pdu_name = dict(BindTransmitter=SessionState.BOUND_TX,
-                        BindReceiver=SessionState.BOUND_RX,
-                        BindTransceiver=SessionState.BOUND_TRX)
-
+        pdu = dict(
+            BindTransmitter=dict(state = SessionState.BOUND_TX, response=BindTransmitterResp),
+            BindReceiver   =dict(state = SessionState.BOUND_RX, response=BindReceiverResp),
+            BindTransceiver=dict(state = SessionState.BOUND_TRX, response=BindTransceiverResp)
+        )
+        
+        #Validating the Credentials and sending response
         if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
             validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
+            
             if(validate == 'True'):
-                self.state = pdu_name[P.__class__.__name__]
-                self.send_response(P.__class__.__name__, P.system_id.value)
+                self.state = pdu[P.__class__.__name__]['state']
+                R = pdu[P.__class__.__name__]['response']()
+                R.sequence_number = Integer(P.sequence_number.value,4)
+                R.system_id = CString(P.system_id.value)
+                data = R.encode()
+                self.socket.sendall(data)
+       
             else:
-                self.generic_response()
-
+                R = GenericNack()
+                R.sequence_number = Integer(P.sequence_number.value,4)
+                R.command_status = Integer(command_status.ESME_RBINDFAIL, 4)
+                data = R.encode()
+                self.socket.sendall(data)
+                
+        print("    Response pdu sent to client by server   ")
         print(P.system_id.value)
         print(P.password.value)
         print(P.system_type.value)
-
-    def send_response(self, pdu_type, system_id):
-        bind_resp = dict(
-            BindTransmitter=dict(response=BindTransmitterResp),
-            BindReceiver=dict(response=BindReceiverResp),
-            BindTransceiver=dict(response=BindTransceiverResp)
-        )
-
-        P = bind_resp[pdu_type]['response']()
-        P.sequence_number = Integer(self._next_seq_num(),4)
-        print("P.sequence_number.value in response")
-        print(P.sequence_number.value)
-        P.system_id = CString(system_id)
-        data = P.encode()
-        self.socket.sendall(data)
-        print("    Response pdu sent to client by server   ")
-
-    def generic_response(self):
-
-        P = GenericNack()
-        P.sequence_number = Integer(self._next_seq_num(),4)
-        P.command_status = Integer(command_status.ESME_RBINDFAIL, 4)
-        data = P.encode()
-        self.socket.sendall(data)
-
-    def handle_response(self):
-
-        P = self.get_pdu_from_socket()
-
-    def unbind(self):
+   
     
-        ''' this method is for sending UNBIND PDU to server by encoding it'''
-        self.close()
-    
-    def handle_unbind(self):
-      
-        self.close()
-    
-    #def send_unbind_response(self):
-      
-      #P.sequence_number = Integer(self._next_seq_num(),4)
-      #data = P.encode()
-      #self.socket.sendall(data)
-      #print("   UNBIND Response pdu sent to client by server   ")
-      
-      
-    #def handle_unbind_response(self):
-      
-      #P = self.get_pdu_from_socket()
-      
+    def handle_unbind(self): 
+      """
+        Used by the server to handle the incoming unbind request
+        """
+      P = self.get_pdu_from_socket()
+      if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+          self.state = SessionState.UNBOUND
+          R = UnBindResp()
+          R.sequence_number = Integer(P.sequence_number.value, 4)
+          data = R.encode()
+          self.socket.sendall(data)
+         
     
     #def send_sms(self, other_parameters):
       
