@@ -1,4 +1,3 @@
-import time
 import socket
 from smpp5.lib.session import SMPPSession
 
@@ -32,13 +31,12 @@ class SMPPClient(object):
 
     def login(self, mode, system_id, password, system_type):
         self.session.bind(mode, system_id, password, system_type)
-        self.session.handle_response()
+        #self.session.handle_response()
 
-    def logoff(self):
-        self.session.unbind()
+    #def logoff(self):
+        #self.session.unbind()
         #self.session.handle_unbind_response()
         #self.session.close_session()
-        time.sleep(1)
 
 
 if __name__ == '__main__':
@@ -46,5 +44,5 @@ if __name__ == '__main__':
     client = SMPPClient()
     client.connect('127.0.0.1', 1337)
     client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
-    client.logoff()
+    #client.logoff()
     client.disconnect()
