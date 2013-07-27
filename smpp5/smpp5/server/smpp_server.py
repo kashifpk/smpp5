@@ -22,14 +22,10 @@ def handle_client_connection(conn, addr):
 
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
-    server_session.handle_bind(SMPPServer.validate) # passing validate function name to handle_bind method to let the session instance call it 
+    server_session.handle_bind(SMPPServer.validate)  # passing validate function name to handle_bind method to let the session instance call it 
     server_session.handle_unbind()
     time.sleep(5)
     conn.close()
-    
-    #server_session.handle_unbind()
-    
-    
 
 
 class SMPPServer(object):
@@ -48,13 +44,13 @@ class SMPPServer(object):
             host = ''
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((host, port)) #built-in method 
+        self.socket.bind((host, port))  # built-in method 
 
         try:
             while True:
-                self.socket.listen(1) #listening for connections
+                self.socket.listen(1)  # listening for connections
                 print("listening......")
-                conn, addr = self.socket.accept() # accept connections and return ip and port 
+                conn, addr = self.socket.accept()  # accept connections and return ip and port 
 
                 P = multiprocessing.Process(target=handle_client_connection, args=(conn, addr))
                 P.start()
@@ -66,20 +62,18 @@ class SMPPServer(object):
             #self.socket.unbind()
             print("Good bye!")
 
-
-
     def validate(system_id, password, system_type):
         db.bind_session()
         system_id = system_id.decode(encoding='ascii')
         passhash = hashlib.sha1(bytes(password.decode(encoding='ascii'), encoding="utf8")).hexdigest()
-        system_type=system_type.decode(encoding='ascii')
-        record=DBSession.query(User).filter_by(user_id = system_id, password = passhash, system_type = system_type).first()
+        system_type = system_type.decode(encoding='ascii')
+        record = DBSession.query(User).filter_by(user_id=system_id, password=passhash, system_type=system_type).first()
         if(record):
-         print("Credentials Validated successfully!!!")
-         return 'True'
+            print("Credentials Validated successfully!!!")
+            return 'True'
         else:
-         print("Validation failed")
-         return 'false'
+            print("Validation failed")
+            return 'false'
 
 
 if __name__ == '__main__':
