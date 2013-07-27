@@ -104,7 +104,7 @@ class SMPPSession(object):
         # if session stat is one of the bound states, unbind it.
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             P = UnBind()
-            P.sequence_number = Integer(self._next_seq_num(),4)
+            P.sequence_number = Integer(self._next_seq_num(), 4)
             self.socket.sendall(P.encode())
             self.state = SessionState.UNBOUND
 
@@ -115,7 +115,6 @@ class SMPPSession(object):
         #    resp_pdu = self.get_pdu_from_socket()
         self.state = SessionState.CLOSED
 
-
     def bind(self, bind_type, system_id, password, system_type):
         """
         Used by the client to bind TX, RX or TRX with the server
@@ -123,9 +122,9 @@ class SMPPSession(object):
         # try sending the appropriate bind type PDU ('RX', 'TX', 'TRX') and fetch return value
         bind_types = dict(
             TX=dict(request=BindTransmitter, response=BindTransmitterResp, state=SessionState.BOUND_TX),
-            RX=dict(request=BindReceiver, response=BindReceiverResp ,state=SessionState.BOUND_RX),
+            RX=dict(request=BindReceiver, response=BindReceiverResp, state=SessionState.BOUND_RX),
             TRX=dict(request=BindTransceiver, response=BindTransceiverResp, state=SessionState.BOUND_TRX)
-        )    
+        )
         self.state = bind_types[bind_type]['state']
         P = bind_types[bind_type]['request']()
         P.sequence_number = Integer(self._next_seq_num(), 4)
@@ -135,67 +134,57 @@ class SMPPSession(object):
         data = P.encode()
         self.socket.sendall(data)
         print("    Bind pdu sent to server by client   ")
-        
-        #recieving the response from server
+        # recieving the response from server
         P = self.get_pdu_from_socket()
-       
-       
+
     def handle_bind(self, validate):
         """
         Used by the server to handle the incoming bind request
         """
-        
         #recieving bind pdu from client
         P = self.get_pdu_from_socket()
         self.server_validate_method = validate
         print("Received PDU: " + P.__class__.__name__)
 
         pdu = dict(
-            BindTransmitter=dict(state = SessionState.BOUND_TX, response=BindTransmitterResp),
-            BindReceiver   =dict(state = SessionState.BOUND_RX, response=BindReceiverResp),
-            BindTransceiver=dict(state = SessionState.BOUND_TRX, response=BindTransceiverResp)
+            BindTransmitter=dict(state=SessionState.BOUND_TX, response=BindTransmitterResp),
+            BindReceiver=dict(state=SessionState.BOUND_RX, response=BindReceiverResp),
+            BindTransceiver=dict(state=SessionState.BOUND_TRX, response=BindTransceiverResp)
         )
-        
         #Validating the Credentials and sending response
         if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
             validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
-            
             if(validate == 'True'):
                 self.state = pdu[P.__class__.__name__]['state']
                 R = pdu[P.__class__.__name__]['response']()
-                R.sequence_number = Integer(P.sequence_number.value,4)
+                R.sequence_number = Integer(P.sequence_number.value, 4)
                 R.system_id = CString(P.system_id.value)
                 data = R.encode()
                 self.socket.sendall(data)
-       
             else:
                 R = GenericNack()
-                R.sequence_number = Integer(P.sequence_number.value,4)
+                R.sequence_number = Integer(P.sequence_number.value, 4)
                 R.command_status = Integer(command_status.ESME_RBINDFAIL, 4)
                 data = R.encode()
                 self.socket.sendall(data)
-                
         print("    Response pdu sent to client by server   ")
         print(P.system_id.value)
         print(P.password.value)
         print(P.system_type.value)
-   
-    
-    def handle_unbind(self): 
-      """
+
+    def handle_unbind(self):
+        """
         Used by the server to handle the incoming unbind request
         """
-      P = self.get_pdu_from_socket()
-      if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
-          self.state = SessionState.UNBOUND
-          R = UnBindResp()
-          R.sequence_number = Integer(P.sequence_number.value, 4)
-          data = R.encode()
-          self.socket.sendall(data)
-         
-    
+        P = self.get_pdu_from_socket()
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            self.state = SessionState.UNBOUND
+            R = UnBindResp()
+            R.sequence_number = Integer(P.sequence_number.value, 4)
+            data = R.encode()
+            self.socket.sendall(data)
+
     #def send_sms(self, other_parameters):
-      
       #if self.state not in ['bound_tx', 'bound_trx']:
            #raise Exception("SMPP Session not in a state that allows sending SMSes")
 
