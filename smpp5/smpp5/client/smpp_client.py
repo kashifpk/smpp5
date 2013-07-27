@@ -27,7 +27,6 @@ class SMPPClient(object):
         #TODO: close SMPPSession if not already closed
         self.session.close()
         self.socket.close()
-        
 
     def login(self, mode, system_id, password, system_type):
         self.session.bind(mode, system_id, password, system_type)
