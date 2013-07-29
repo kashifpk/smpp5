@@ -68,6 +68,7 @@ class SMPPSession(object):
         self.state = SessionState.OPEN
         self._seq_num = 0
         self.server_validate_method = ''
+        self.status = None
 
     def _next_seq_num(self):
         self._seq_num += 1
@@ -136,6 +137,8 @@ class SMPPSession(object):
         print("    Bind pdu sent to server by client   ")
         # recieving the response from server
         P = self.get_pdu_from_socket()
+        if(P.command_status.value == 0):
+            self.status = 'success'
 
     def handle_bind(self, validate):
         """
@@ -155,6 +158,7 @@ class SMPPSession(object):
         if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
             validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
             if(validate == 'True'):
+                self.status = 'success'
                 self.state = pdu[P.__class__.__name__]['state']
                 R = pdu[P.__class__.__name__]['response']()
                 R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -162,6 +166,7 @@ class SMPPSession(object):
                 data = R.encode()
                 self.socket.sendall(data)
             else:
+                self.status = 'fail'
                 R = GenericNack()
                 R.sequence_number = Integer(P.sequence_number.value, 4)
                 R.command_status = Integer(command_status.ESME_RBINDFAIL, 4)
