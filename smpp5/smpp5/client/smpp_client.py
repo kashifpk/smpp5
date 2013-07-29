@@ -13,24 +13,33 @@ class SMPPClient(object):
     password = None
     system_type = None
     session = None
+    status = None
 
     def __init__(self):
         pass
 
     def connect(self, host, port):
-
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((host, port))
-        self.session = SMPPSession('client', self.socket)
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((host, port))
+            self.session = SMPPSession('client', self.socket)
+            print("Connection established successfully\n")
+            self.status = 'success'
+        except:
+            print("Connection Refused...Try Again\n")
 
     def disconnect(self):
         #TODO: close SMPPSession if not already closed
-        self.session.close()
         self.socket.close()
 
     def login(self, mode, system_id, password, system_type):
         self.session.bind(mode, system_id, password, system_type)
+        self.status = self.session.status
         #self.session.handle_response()
+
+    def logout(self):
+        if(self.status == 'success'):
+            self.session.close()
 
     #def logoff(self):
         #self.session.unbind()
@@ -42,6 +51,6 @@ if __name__ == '__main__':
     #Testing client
     client = SMPPClient()
     client.connect('127.0.0.1', 1337)
-    client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
-    #client.logoff()
+    client.login('TX', '3TEST', 'secret0', 'SUBMIT1')
+    client.logout()
     client.disconnect()
