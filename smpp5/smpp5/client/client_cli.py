@@ -60,7 +60,7 @@ class ClientHandler(object):
                     if(option == 1):
                         self.recipient = input("Enter the Recipient     ")
                         self.message = input("Enter the Short Message to send      ")
-                    print("Do you want to exit......reply with Y/N")
+                    print("Do you want to continue......reply with Y/N")
                     ch = input()
             else:
                 print("Oops! Login Failed...Try Again")
