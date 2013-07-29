@@ -43,25 +43,30 @@ class ClientHandler(object):
                 self.bind_type = 'TRX'
 
         # Ask for credentials
-            self.system_id = input("Enter the System Id\t\t\t")
-            self.password = input("Enter the Password\t\t\t\t")
-            self.system_type = input("Enter the System Type\t\t\t")
+            self.system_id = input("Enter the System Id        ")
+            self.password = input("Enter the Password        ")
+            self.system_type = input("Enter the System Type     ")
             self.client.login(self.bind_type, self.system_id, self.password, self.system_type)
 
         # If cresentials validated successfully then menu is displayed to client
             if(self.client.status == 'success'):
-                print("Successfully Login\n")
-                ch = 'Y'
-                while ch == 'Y':
-                    print("1. Press 1 to send Short Text Message")
-                    print("2. Press 2 to query the status of previously submitted short Text Message")
-                    print("3. Press 3 to cancel a previously submitted Short Text Message")
+                print("\nSuccessfully Login")
+                while True:
+                    print("\nPress 1 to send Short Text Message")
+                    print("Press 2 to query the status of previously submitted short Text Message")
+                    print("Press 3 to cancel a previously submitted Short Text Message")
+                    print("Press 4 to exit")
                     option = int(input())
                     if(option == 1):
-                        self.recipient = input("Enter the Recipient     ")
+                        self.recipient = input("Enter the Recipient                  ")
                         self.message = input("Enter the Short Message to send      ")
-                    print("Do you want to continue......reply with Y/N")
-                    ch = input()
+                    elif(option == 2):
+                        pass
+                    elif(option == 3):
+                        pass
+                    elif(option == 4):
+                        break
+
             else:
                 print("Oops! Login Failed...Try Again")
 
