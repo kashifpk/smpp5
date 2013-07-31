@@ -87,9 +87,9 @@ class SMPPSession(object):
         sock_data = d + sock_data
 
         command_id = Integer.decode(sock_data[4:8])    # decode from 5th byte till 8th to get command_id
-        PDUClass = command_mappings[command_id.value]  # get the class name via command_id
+        PDUClass = command_mappings[command_id.value]  # get the command id to know about the bind type
 
-        # decode PDU
+        # decode PDU according to the bind type
         P = PDUClass.decode(sock_data)
 
         return P
