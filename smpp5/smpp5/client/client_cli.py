@@ -6,8 +6,12 @@ from smpp5.lib.session import SMPPSession
 from smpp5.client.smpp_client import SMPPClient
 
 
-class ClientHandler(object):
 
+
+class ClientHandler(object):
+    '''Client handler is responsible for providing a command line interactive prompt to the client 
+    '''
+        
     ip = None
     port = None
     system_id = None
@@ -48,7 +52,7 @@ class ClientHandler(object):
             self.system_type = input("Enter the System Type     ")
             self.client.login(self.bind_type, self.system_id, self.password, self.system_type)
 
-        # If cresentials validated successfully then menu is displayed to client
+        # If credentials are validated successfully then menu is displayed to the client
             if(self.client.status == 'success'):
                 print("\nSuccessfully Login")
                 while True:
