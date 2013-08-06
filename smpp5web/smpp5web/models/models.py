@@ -20,7 +20,11 @@ class Sms(Base):
     timestamp = Column(u'timestamp', TIMESTAMP(timezone=True), primary_key=False, nullable=False, default=time_now),
     user_id = Column(Unicode(100), ForeignKey(User.user_id))
  
-    #def __init__(self, user_id=None, password=None, system_type=None):
-    #    self.user_id = user_id
-    #    self.password = password
-    #    self.system_type = system_type
+    def __init__(self, sms_id=None, sms_type=None, sms_from=None, sms_to=None, msg=None, timestamp=None, user_id=None):
+        self.sms_id = sms_id
+        self.sms_type = sms_type
+        self.sms_from = sms_from
+        self.sms_to = sms_to
+        self.msg = msg
+        self.timestamp = timestamp
+        self.user_id = user_id
