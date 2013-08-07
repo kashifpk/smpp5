@@ -189,7 +189,17 @@ class SMPPSession(object):
             data = R.encode()
             self.socket.sendall(data)
 
-    #def send_sms(self, other_parameters):
-      #if self.state not in ['bound_tx', 'bound_trx']:
-           #raise Exception("SMPP Session not in a state that allows sending SMSes")
+    def send_sms(self, service_type, source_addr, destination_addr, schedule_delivery_time, short_message):
+        
+        P = SubmitSm()
+        P.service_type = service_type
+        P.source_addr = source_addr
+        P.destination_addr = destination_addr
+        P.schedule_delivery_time = schedule_delivery_time
+        P.short_message = short_message
+        data = P.encode()
+        self.socket.sendall(data)
+        if self.state not in ['bound_tx', 'bound_trx']:
+           raise Exception("SMPP Session not in a state that allows sending SMSes")
+       #raise Exception("SMPP Session not in a state that allows sending SMSes")
 
