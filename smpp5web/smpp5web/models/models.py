@@ -1,4 +1,3 @@
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -21,7 +20,6 @@ class Sms(Base):
     msg = Column(Unicode(40))
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(Unicode(40))
-    msg_type = Column(Unicode(40))
     user_id = Column(Unicode(100), ForeignKey(User.user_id))
  
     def __init__(self, sms_id=None, sms_type=None, sms_from=None, sms_to=None, msg=None, status=None, msg_type=None, user_id=None):
@@ -31,5 +29,4 @@ class Sms(Base):
         self.sms_to = sms_to
         self.msg = msg
         self.status = status
-        self.msg_type = msg_type
         self.user_id = user_id
