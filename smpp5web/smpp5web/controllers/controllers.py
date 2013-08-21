@@ -31,13 +31,26 @@ def contact_form(request):
 @view_config(route_name='send_sms', renderer='send_sms.mako')
 def send_sms(request):
     
-    f = request.POST   # empty form initializes if not a POST request
+    f = dict( sms_id = request.sms_id
+            ,sms_type = request.sms_from
+            ,sms_from = request.sms_from
+            ,sms_to = request.sms_to
+            ,msg = request.msg
+            ,timestamp = request.timestamp
+            ,status = request.status
+            ,user_id = request.user_id )
     return {'send_sms': f, 'project': 'smpp5web'}
 
 
 @view_config(route_name='incoming_sms', renderer='incoming_sms.mako')
 def incoming_sms(request):
     
-    f = request.POST   # empty form initializes if not a POST request
+    f = dict( sms_id = request.sms_id
+            ,sms_type = request.sms_from
+            ,sms_from = request.sms_from
+            ,sms_to = request.sms_to
+            ,msg = request.msg
+            ,timestamp = request.timestamp
+            ,status = request.status
+            ,user_id = request.user_id )
     return {'incoming_sms': f, 'project': 'smpp5web'}
-
