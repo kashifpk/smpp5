@@ -27,3 +27,17 @@ def contact_form(request):
             return HTTPFound(location=request.route_url('home'))
 
     return {'contact_form': f}
+    
+@view_config(route_name='send_sms', renderer='send_sms.mako')
+def send_sms(request):
+    
+    f = request.POST   # empty form initializes if not a POST request
+    return {'send_sms': f, 'project': 'smpp5web'}
+
+
+@view_config(route_name='incoming_sms', renderer='incoming_sms.mako')
+def incoming_sms(request):
+    
+    f = request.POST   # empty form initializes if not a POST request
+    return {'incoming_sms': f, 'project': 'smpp5web'}
+
