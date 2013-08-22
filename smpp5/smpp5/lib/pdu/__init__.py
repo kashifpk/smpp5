@@ -13,6 +13,15 @@ from smpp5.lib.pdu.session_management import (
     EnquireLinkResp,
     AlertNotification,
     GenericNack)
+from smpp5.lib.pdu.message_submission import (
+    SubmitSm,
+    SubmitSmResp,
+    DataSm,
+    DataSmResp,
+    SubmitMulti,
+    SubmitMultiResp,
+    QuerySm,
+    QuerySmResp)
 
 # command_id to PDU Class mappings
 command_mappings = {
@@ -28,5 +37,9 @@ command_mappings = {
     command_ids.unbind_resp: UnBindResp,
     command_ids.enquire_link: EnquireLink,
     command_ids.enquire_link_resp: EnquireLinkResp,
-    command_ids.alert_notification: AlertNotification
+    command_ids.alert_notification: AlertNotification,
+    command_ids.submit_sm: SubmitSm,
+    command_ids.submit_sm_resp: SubmitSmResp,
+    command_ids.query_sm: QuerySm,
+    command_ids.query_sm_resp : QuerySmResp
 }
