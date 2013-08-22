@@ -1,9 +1,9 @@
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
+import datetime
 
 from ..models import (
-    DBSession,
-    )
+    DBSession, Sms)
 
 from ..forms import ContactForm
 
@@ -27,30 +27,23 @@ def contact_form(request):
             return HTTPFound(location=request.route_url('home'))
 
     return {'contact_form': f}
-    
-@view_config(route_name='send_sms', renderer='send_sms.mako')
-def send_sms(request):
-    
-    f = dict( sms_id = request.sms_id
-            ,sms_type = request.sms_from
-            ,sms_from = request.sms_from
-            ,sms_to = request.sms_to
-            ,msg = request.msg
-            ,timestamp = request.timestamp
-            ,status = request.status
-            ,user_id = request.user_id )
-    return {'send_sms': f, 'project': 'smpp5web'}
 
 
-@view_config(route_name='incoming_sms', renderer='incoming_sms.mako')
-def incoming_sms(request):
+@view_config(route_name='sms_in', renderer='sms.mako')
+def say(request):
+    if "POST" == request.method:
+        S = Sms()
+        S.sms_type = 'incoming'
+        S.sms_from = request.POST['address']
+        S.sms_to = 'None'
+        S.msg = request.POST['body']
+        S.timestamp = datetime.datetime.now()
+        S.status = 'pending'
+        S.msg_type = 'text'
+        S.user_id = '3TEST'
+        DBSession.add(S)
+        return{}
+
+
+
     
-    f = dict( sms_id = request.sms_id
-            ,sms_type = request.sms_from
-            ,sms_from = request.sms_from
-            ,sms_to = request.sms_to
-            ,msg = request.msg
-            ,timestamp = request.timestamp
-            ,status = request.status
-            ,user_id = request.user_id )
-    return {'incoming_sms': f, 'project': 'smpp5web'}
