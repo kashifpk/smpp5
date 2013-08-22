@@ -7,10 +7,13 @@ import socket
 import hashlib
 import transaction
 import multiprocessing
+import datetime
 
 import db
 from db import DBSession
-from models import User
+from models import User, Sms
+from smpp5.server.database_file import Database
+
 
 from smpp5.lib.session import SMPPSession
 
@@ -23,6 +26,7 @@ def handle_client_connection(conn, addr):
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
     server_session.handle_bind(SMPPServer.validate)  # passing validate function name to handle_bind method to let the session instance call it 
+    server_session.process_sms(SMPPServer.db_storage)
     server_session.handle_unbind()
     time.sleep(5)
     conn.close()
@@ -74,6 +78,24 @@ class SMPPServer(object):
         else:
             print("Validation failed")
             return 'false'
+
+    def db_storage(recipient, message, user_id):
+        recipient = recipient.decode(encoding='ascii')
+        message = message.decode(encoding='ascii')
+        user_id = user_id
+        S = Sms()
+        S.sms_type = 'outgoing'
+        S.sms_from = 'None'
+        S.sms_to = recipient
+        S.msg = message
+        S.timestamp = datetime.datetime.now()
+        S.status = 'pending'
+        S.msg_type = 'text'
+        S.user_id = user_id
+        DBSession.add(S)
+        transaction.commit()
+        sms = DBSession.query(Sms)[-1]
+        return(sms.id)
 
 
 if __name__ == '__main__':
