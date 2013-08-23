@@ -30,6 +30,7 @@ def handle_client_connection(conn, addr):
     server_session.server_db_store = SMPPServer.db_storage
     server_session.server_query_result = SMPPServer.query_result
     server_session.server_cancel_result = SMPPServer.cancel_result
+    server_session.server_replace_result = SMPPServer.replace_result
     server_session.close()
     time.sleep(5)
     conn.close()
@@ -104,7 +105,7 @@ class SMPPServer(object):
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
     # if 22 returns then no such message_id exist
         if(smses is None):
-            return(22)
+            return(command_status.ESME_RQUERYFAIL)
         elif(smses.status == 'pending'):
             return(message_state.SCHEDULED)
         elif(smses.status == 'delivered'):
@@ -112,13 +113,25 @@ class SMPPServer(object):
 
     def cancel_result(message_id):
         message_id = int(message_id.decode(encoding='ascii'))
-        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='pending').first()
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='scheduled').first()
         if(smses is None):
             return False
         else:
             DBSession.delete(smses)
             transaction.commit()
             return True
+
+    def replace_result(message_id, message):
+        message_id = int(message_id.decode(encoding='ascii'))
+        message = message.decode(encoding='ascii')
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='scheduled').first()
+        if(smses is None):
+            return False
+        else:
+            smses.msg = message
+            transaction.commit()
+            return True
+
 
 if __name__ == '__main__':
     #testing server
