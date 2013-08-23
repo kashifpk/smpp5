@@ -54,6 +54,7 @@ class ClientHandler(object):
             if(self.client.validation_status == 'success'):
                 print("\nSuccessfully Login")
                 while True:
+                    print("********************** MAIN MENU **********************************")
                     print("\nPress 1 to send Short Text Message")
                     print("Press 2 to query the status of previously submitted short Text Message")
                     print("Press 3 to cancel a previously submitted Short Text Message")
@@ -67,7 +68,8 @@ class ClientHandler(object):
                         message_id = system_id = input("Enter the Message Id of Message whom Status is required    ")
                         self.client.query_status(message_id)
                     elif(option == 3):
-                        pass
+                        message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
+                        self.client.cancel_sms(message_id)
                     elif(option == 4):
                         break
 
