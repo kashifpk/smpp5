@@ -54,11 +54,12 @@ class ClientHandler(object):
             if(self.client.validation_status == 'success'):
                 print("\nSuccessfully Login")
                 while True:
-                    print("********************** MAIN MENU **********************************")
+                    print("\n********************** MAIN MENU **********************************")
                     print("\nPress 1 to send Short Text Message")
                     print("Press 2 to query the status of previously submitted short Text Message")
                     print("Press 3 to cancel a previously submitted Short Text Message")
-                    print("Press 4 to exit")
+                    print("Press 4 to replace a previously submitted Short Text Message")
+                    print("Press 5 to exit")
                     option = int(input())
                     if(option == 1):
                         self.recipient = input("Enter the Recipient (Kindly add +92)                  ")
@@ -71,6 +72,10 @@ class ClientHandler(object):
                         message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
                         self.client.cancel_sms(message_id)
                     elif(option == 4):
+                        message_id = input("Enter the Message Id of Message whom you want to replace    ")
+                        self.message = input("Enter the Short Message to replace previous sumbitted short message      ")
+                        self.client.replace_sms(message_id, self.message,)
+                    elif(option == 5):
                         break
 
             else:
