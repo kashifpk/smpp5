@@ -114,10 +114,11 @@ class SMPPServer(object):
         message_id = int(message_id.decode(encoding='ascii'))
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='pending').first()
         if(smses is None):
-            pass
+            return False
         else:
             DBSession.delete(smses)
             transaction.commit()
+            return True
 
 if __name__ == '__main__':
     #testing server
