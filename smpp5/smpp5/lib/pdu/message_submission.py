@@ -136,4 +136,24 @@ class CancelSmResp(PDU):
     command_id = Integer(command_ids.cancel_sm_resp, 4)
 
 
+class ReplaceSm(PDU):
+    command_id = Integer(command_ids.replace_sm, 4)
+    message_id = CString("")
+    source_addr_ton = Integer(TON.INTERNATIONAL, 1)
+    source_addr_npi = Integer(NPI.ISDN, 1)
+    source_addr = CString("")
+    schedule_delivery_time = CString("")
+    validity_period = CString("")
+    registered_delievery = Integer(0, 1)
+    sm_default_msg_id = Integer(0, 1)
+    sm_length = Integer(0, 1)                # page 134
+    short_message = CString("")              # This field should be CString
+
+
+class ReplaceSmResp(PDU):
+    command_id = Integer(command_ids.replace_sm_resp, 4)
+
+
+
+
     
