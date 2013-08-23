@@ -59,9 +59,16 @@ class SMPPClient(object):
     def cancel_sms(self, message_id):
         cancel_status = self.session.cancel_sms(message_id)
         if(cancel_status is False):
-            print("Message cancelling Failed")
+            print("Message cancelling Failed Because Message has been already Delivered")
         else:
             print("Message with Message_id  "+str(message_id)+"  has been cancelled successfully")
+
+    def replace_sms(self, message_id, message):
+        replace_status = self.session.replace_sms(message_id, message)
+        if(replace_status is False):
+            print("Message replacement Failed Because Message has been already Delivered")
+        else:
+            print("Message with Message_id  "+str(message_id)+"  has been replaced successfully")
 
     def logout(self):
         if(self.conn_status == 'connected'):
@@ -78,6 +85,7 @@ if __name__ == '__main__':
     #client.send_sms('+923365195924', 'hello to kiran :-)', '3TEST')
     #client.query_status(70)
     #client.query_status(15)
-    client.cancel_sms(107)
+    client.replace_sms(1, 'asma')
+    #client.cancel_sms(107)
     client.logout()
     client.disconnect()
