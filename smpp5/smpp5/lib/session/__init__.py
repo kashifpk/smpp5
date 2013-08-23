@@ -246,10 +246,18 @@ class SMPPSession(object):
             data = P.encode()
             self.socket.sendall(data)
             R = self.get_pdu_from_socket()
+            print(R.command_status.value)
+            if(R.command_status.value == 0):
+                return True
+            else:
+                return False
 
     def process_sms_cancelling(self, P):
         cancel_result = self.server_cancel_result(P.message_id.value)
         R = CancelSmResp()
+        R.sequence_number = Integer(P.sequence_number.value, 4)
+        if(cancel_result is False):
+            R.command_status = Integer(command_status.ESME_RCANCELFAIL, 4)
         data = R.encode()
         self.socket.sendall(data)
 
