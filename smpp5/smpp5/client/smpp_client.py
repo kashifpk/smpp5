@@ -57,8 +57,11 @@ class SMPPClient(object):
             print("\nSorry Provided Message_id doesnot exist\n")
 
     def cancel_sms(self, message_id):
-        self.session.cancel_sms(message_id)
-        print("Message with Message_id  "+str(message_id)+"  has been cancelled successfully")
+        cancel_status = self.session.cancel_sms(message_id)
+        if(cancel_status is False):
+            print("Message cancelling Failed")
+        else:
+            print("Message with Message_id  "+str(message_id)+"  has been cancelled successfully")
 
     def logout(self):
         if(self.conn_status == 'connected'):
@@ -70,10 +73,11 @@ if __name__ == '__main__':
     client = SMPPClient()
     client.connect('127.0.0.1', 1337)
     client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
-    client.send_sms('+923005381993', 'hello from asma project yessssss :-)', '3TEST')
-    client.query_status(30)
-    client.send_sms('+923365195924', 'hello to kiran :-)', '3TEST')
-    client.query_status(70)
-    client.query_status(15)
+    #client.send_sms('+923005381993', 'hello from asma project yessssss :-)', '3TEST')
+    #client.query_status(30)
+    #client.send_sms('+923365195924', 'hello to kiran :-)', '3TEST')
+    #client.query_status(70)
+    #client.query_status(15)
+    client.cancel_sms(107)
     client.logout()
     client.disconnect()
