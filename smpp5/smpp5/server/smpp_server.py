@@ -9,6 +9,8 @@ import transaction
 import multiprocessing
 import datetime
 
+from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status, tlv_tag, message_state
+
 import db
 from db import DBSession
 from models import User, Sms
@@ -22,12 +24,13 @@ def handle_client_connection(conn, addr):
     """
     Handle a client connection
     """
-
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
     server_session.handle_bind(SMPPServer.validate)  # passing validate function name to handle_bind method to let the session instance call it 
-    server_session.process_sms(SMPPServer.db_storage)
-    server_session.handle_unbind()
+    server_session.server_db_store = SMPPServer.db_storage
+    server_session.server_query_result = SMPPServer.query_result
+    server_session.server_cancel_result = SMPPServer.cancel_result
+    server_session.close()
     time.sleep(5)
     conn.close()
 
@@ -63,7 +66,6 @@ class SMPPServer(object):
                 print("Active connections: %i" % len(active_conns))
 
         except (KeyboardInterrupt, SystemExit):
-            #self.socket.unbind()
             print("Good bye!")
 
     def validate(system_id, password, system_type):
@@ -97,6 +99,25 @@ class SMPPServer(object):
         sms = DBSession.query(Sms)[-1]
         return(sms.id)
 
+    def query_result(message_id):
+        message_id = int(message_id.decode(encoding='ascii'))
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
+    # if 22 returns then no such message_id exist
+        if(smses is None):
+            return(22)
+        elif(smses.status == 'pending'):
+            return(message_state.SCHEDULED)
+        elif(smses.status == 'delivered'):
+            return(message_state.DELIVERED)
+
+    def cancel_result(message_id):
+        message_id = int(message_id.decode(encoding='ascii'))
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='pending').first()
+        if(smses is None):
+            pass
+        else:
+            DBSession.delete(smses)
+            transaction.commit()
 
 if __name__ == '__main__':
     #testing server
