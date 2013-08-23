@@ -7,11 +7,11 @@ from models import Sms, User
 
 try:
     db.bind_session()
-    smses = DBSession.query(Sms).filter_by(status='pending', sms_type='outgoing').count()
+    smses = DBSession.query(Sms).filter_by(status='scheduled', sms_type='outgoing').count()
     if(smses == 0):
       print("You have no pending messages to sent.......Thanks")
     else:
-        smses = DBSession.query(Sms).filter_by(status='pending', sms_type='outgoing').all()
+        smses = DBSession.query(Sms).filter_by(status='scheduled', sms_type='outgoing').all()
         for S in smses:
             number = int(S.sms_to)
             message = S.msg
@@ -21,7 +21,7 @@ try:
     # Note when some data is specified in urlopen then HTTP request type 
     # POST is used instead of GET request type
             result = urllib2.urlopen("http://192.168.1.2:50111/" + 'sendsms', post_str).read()
-            S.status = 'sent'
+            S.status = 'delivered'
             print(result)
         transaction.commit()
     
