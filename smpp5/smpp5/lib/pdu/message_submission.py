@@ -25,7 +25,7 @@ class SubmitSm(PDU):
     data_coding = Integer(0, 1)              # page 123
     sm_default_msg_id = Integer(0, 1)        # page 134
     sm_length = Integer(0, 1)                # page 134
-    short_message = CString("")        # This is actually String
+    short_message = CString("")
     #TLV Submission operations
 
 
@@ -118,4 +118,22 @@ class QuerySmResp(PDU):
     final_date = CString("")
     message_state = Integer(0, 1)
     error_code = Integer(0, 1)
+
+
+class CancelSm(PDU):
+    command_id = Integer(command_ids.cancel_sm, 4)
+    service_type = CString("")
+    message_id = CString("")
+    source_addr_ton = Integer(TON.INTERNATIONAL, 1)
+    source_addr_npi = Integer(NPI.ISDN, 1)
+    source_addr = CString("")
+    dest_addr_ton = Integer(TON.INTERNATIONAL, 1)
+    dest_addr_npi = Integer(NPI.ISDN, 1)
+    destination_addr = CString("")
+
+
+class CancelSmResp(PDU):
+    command_id = Integer(command_ids.cancel_sm_resp, 4)
+
+
     
