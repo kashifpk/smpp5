@@ -39,7 +39,9 @@ from smpp5.lib.pdu.message_submission import (
     QuerySm,
     QuerySmResp,
     CancelSm,
-    CancelSmResp)
+    CancelSmResp,
+    ReplaceSm,
+    ReplaceSmResp)
 
 
 class SessionState(object):
@@ -75,6 +77,7 @@ class SMPPSession(object):
         self.server_db_store = ''
         self.server_query_result = ''
         self.server_cancel_result = ''
+        self.server_replace_result = ''
         self.validation_status = None
         self.user_id = None
 
@@ -112,6 +115,8 @@ class SMPPSession(object):
             self.process_query(P)
         elif(command_ids.cancel_sm == P.command_id.value):
             self.process_sms_cancelling(P)
+        elif(command_ids.replace_sm == P.command_id.value):
+            self.process_replace_sms(P)
 
     def close(self):
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
@@ -242,11 +247,11 @@ class SMPPSession(object):
             raise Exception("SMPP Session not in a state that allows cancelling SMSes")
         else:
             P = CancelSm()
+            P.sequence_number = Integer(self._next_seq_num(), 4)
             P.message_id = CString(str(message_id))
             data = P.encode()
             self.socket.sendall(data)
             R = self.get_pdu_from_socket()
-            print(R.command_status.value)
             if(R.command_status.value == 0):
                 return True
             else:
@@ -258,6 +263,28 @@ class SMPPSession(object):
         R.sequence_number = Integer(P.sequence_number.value, 4)
         if(cancel_result is False):
             R.command_status = Integer(command_status.ESME_RCANCELFAIL, 4)
+        data = R.encode()
+        self.socket.sendall(data)
+
+    def replace_sms(self, message_id, message):
+        P = ReplaceSm()
+        P.message_id = CString(str(message_id))
+        P.sequence_number = Integer(self._next_seq_num(), 4)
+        P.short_message = CString(message)
+        data = P.encode()
+        self.socket.sendall(data)
+        R = self.get_pdu_from_socket()
+        if(R.command_status.value == 0):
+            return True
+        else:
+            return False
+
+    def process_replace_sms(self, P):
+        replace_sms = self.server_replace_result(P.message_id.value, P.short_message.value)
+        R = ReplaceSmResp()
+        R.sequence_number = Integer(P.sequence_number.value, 4)
+        if(replace_sms is False):
+            R.command_status = Integer(command_status.ESME_RREPLACEFAIL, 4)
         data = R.encode()
         self.socket.sendall(data)
 
