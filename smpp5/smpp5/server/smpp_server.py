@@ -91,7 +91,7 @@ class SMPPServer(object):
         S.sms_to = recipient
         S.msg = message
         S.timestamp = datetime.datetime.now()
-        S.status = 'pending'
+        S.status = 'scheduled'
         S.msg_type = 'text'
         S.user_id = user_id
         DBSession.add(S)
