@@ -1,5 +1,6 @@
 import socket
 from smpp5.lib.session import SMPPSession
+from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status, tlv_tag, message_state
 
 
 class SMPPClient(object):
@@ -37,27 +38,31 @@ class SMPPClient(object):
     def login(self, mode, system_id, password, system_type):
         if(self.conn_status == 'connected'):
             self.session.bind(mode, system_id, password, system_type)
-            self.validation_status = self.session.status
+            self.validation_status = self.session.validation_status
             if(self.validation_status != 'success'):
                 print("Oops!!validation failed")
-        #self.session.handle_response()
 
     def send_sms(self, recipient, message, system_id):
         if(self.conn_status == 'connected'):
             message_id = self.session.send_sms(recipient, message, system_id)
-            print("Message id of Message U have just sent is "+message_id)
+            print("\nMessage id of Message U have just sent is  "+str(message_id) + "\n")
 
     def query_status(self, message_id):
-        self.session.query_status(message_id)
+        message_status = self.session.query_status(message_id)
+        if(message_status == message_state.DELIVERED):
+            print("\nYour Message having Message_id  "+str(message_id)+"  has been successfully Delievered\n")
+        elif(message_status == message_state.SCHEDULED):
+            print("\nYour Message having Message_id  "+str(message_id)+"  is scheduled and ready to deliever\n")
+        else:
+            print("\nSorry Provided Message_id doesnot exist\n")
+
+    def cancel_sms(self, message_id):
+        self.session.cancel_sms(message_id)
+        print("Message with Message_id  "+str(message_id)+"  has been cancelled successfully")
 
     def logout(self):
         if(self.conn_status == 'connected'):
-            self.session.close()
-
-    #def logoff(self):
-        #self.session.unbind()
-        #self.session.handle_unbind_response()
-        #self.session.close_session()
+            self.session.unbind()
 
 
 if __name__ == '__main__':
@@ -66,5 +71,9 @@ if __name__ == '__main__':
     client.connect('127.0.0.1', 1337)
     client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
     client.send_sms('+923005381993', 'hello from asma project yessssss :-)', '3TEST')
+    client.query_status(30)
+    client.send_sms('+923365195924', 'hello to kiran :-)', '3TEST')
+    client.query_status(70)
+    client.query_status(15)
     client.logout()
     client.disconnect()
