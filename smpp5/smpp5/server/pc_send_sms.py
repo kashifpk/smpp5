@@ -9,7 +9,7 @@ try:
     db.bind_session()
     smses = DBSession.query(Sms).filter_by(status='scheduled', sms_type='outgoing').count()
     if(smses == 0):
-      print("You have no pending messages to sent.......Thanks")
+      print("\nYou have no pending messages to sent.......Thanks\n")
     else:
         smses = DBSession.query(Sms).filter_by(status='scheduled', sms_type='outgoing').all()
         for S in smses:
