@@ -1,5 +1,12 @@
 from bottle import *
-import android
+import android, socket, struct
+
+def return_ip():
+    droid = android.Android()
+    ipdec = droid.wifiGetConnectionInfo().result['ip_address']
+    ipstr = socket.inet_ntoa(struct.pack('L', ipdec))
+    return ipstr
+
 
 @post('/sendsms')
 def read_sms():
@@ -10,4 +17,4 @@ def read_sms():
     return "Message sent successfully"
 
 
-run(host='192.168.1.2', port=50111)
+run(host= return_ip(), port=50111)
