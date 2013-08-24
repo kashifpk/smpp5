@@ -66,7 +66,7 @@ class ClientHandler(object):
                         self.message = input("Enter the Short Message to send      ")
                         self.client.send_sms(self.recipient, self.message, self.system_id)
                     elif(option == 2):
-                        message_id = system_id = input("Enter the Message Id of Message whom Status is required    ")
+                        message_id = input("Enter the Message Id of Message whom Status is required    ")
                         self.client.query_status(message_id)
                     elif(option == 3):
                         message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
