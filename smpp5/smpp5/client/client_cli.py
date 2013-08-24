@@ -77,6 +77,8 @@ class ClientHandler(object):
                         self.client.replace_sms(message_id, self.message,)
                     elif(option == 5):
                         break
+                    else:
+                        print("\nInvalid Option....")
 
             else:
                 print("Oops! Login Failed...Try Again")
