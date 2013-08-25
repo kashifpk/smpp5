@@ -62,8 +62,9 @@ class ClientHandler(object):
                     print("Press 5 to exit")
                     option = int(input())
                     if(option == 1):
-                        self.recipient = input("Enter the Recipient (Kindly add +92)                  ")
+                        self.recipient = input("Enter the Recipient                                   ")
                         self.message = input("Enter the Short Message to send      ")
+                        self.recipient = '+92' + self.recipient[1:]
                         self.client.send_sms(self.recipient, self.message, self.system_id)
                     elif(option == 2):
                         message_id = input("Enter the Message Id of Message whom Status is required    ")
@@ -78,7 +79,7 @@ class ClientHandler(object):
                     elif(option == 5):
                         break
                     else:
-                        print("\nInvalid Option....")
+                        print("\nInvalid Option......")
 
             else:
                 print("Oops! Login Failed...Try Again")
