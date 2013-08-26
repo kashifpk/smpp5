@@ -1,4 +1,3 @@
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -35,3 +34,11 @@ class Sms(Base):
         self.status = status
         self.msg_type = msg_type
         self.user_id = user_id
+
+
+class User_Number(Base):
+    __tablename__ = 'user_number'
+    
+    user_id = Column(Integer, primary_key=True)
+    cell_number = Column(Integer, primary_key=True)           
+    user_id = Column(Unicode(100), ForeignKey(User.user_id))
