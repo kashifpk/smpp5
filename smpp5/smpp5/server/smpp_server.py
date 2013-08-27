@@ -13,7 +13,7 @@ from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status
 
 import db
 from db import DBSession
-from models import User, Sms
+from models import User, Sms, User_Number
 from smpp5.server.database_file import Database
 
 
@@ -85,7 +85,13 @@ class SMPPServer(object):
     def db_storage(recipient, message, user_id):
         recipient = recipient.decode(encoding='ascii')
         message = message.decode(encoding='ascii')
-        user_id = user_id
+        user = DBSession.query(User_Number).filter_by(cell_number=recipient, user_id=user_id).first()
+        if(user is None):
+            U = User_Number()
+            U.cell_number = recipient
+            U.user_id = user_id
+            DBSession.add(U)
+            transaction.commit()
         S = Sms()
         S.sms_type = 'outgoing'
         S.sms_from = 'None'
@@ -106,7 +112,7 @@ class SMPPServer(object):
     # if 22 returns then no such message_id exist
         if(smses is None):
             return(command_status.ESME_RQUERYFAIL)
-        elif(smses.status == 'pending'):
+        elif(smses.status == 'scheduled'):
             return(message_state.SCHEDULED)
         elif(smses.status == 'delivered'):
             return(message_state.DELIVERED)
@@ -137,3 +143,5 @@ if __name__ == '__main__':
     #testing server
     S = SMPPServer()
     S.start_serving('127.0.0.1', 1337)
+
+
