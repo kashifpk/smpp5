@@ -1,8 +1,7 @@
 from sqlalchemy import (
     Column,
     Integer,
-    Unicode,
-    String,
+    Unicode
     )
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import backref, relationship
@@ -41,13 +40,14 @@ class User(Base):
     user_id = Column(Unicode(100), primary_key=True)
     password = Column(Unicode(40))
     system_type = Column(Unicode(40))
-    bind_account_type = Column(String(40))
+    account_type = Column(Unicode(40))
 
-    def __init__(self, user_id=None, password=None, system_type=None, bind_account_type=None ):
+    def __init__(self, user_id=None, password=None, system_type=None, account_type=None):
         self.user_id = user_id
         self.password = password
         self.system_type = system_type
-        self.bind_account_type = bind_account_type
+        self.account_type = account_type
+
 
 class UserPermission(Base):
     __tablename__ = 'user_permissions'
