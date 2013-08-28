@@ -39,11 +39,9 @@ class Sms(Base):
 class User_Number(Base):
     __tablename__ = 'user_number'
 
-    id = Column(Integer, primary_key=True)
+    user_id = Column(Unicode(100), ForeignKey(User.user_id), primary_key=True)
     cell_number = Column(Unicode(40), primary_key=True)
-    user_id = Column(Unicode(100), ForeignKey(User.user_id))
 
     def __init__(self, cell_number=None, user_id=None):
-        self.cell_number = cell_number
         self.user_id = user_id
-        
+        self.cell_number = cell_number
