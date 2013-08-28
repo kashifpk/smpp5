@@ -167,7 +167,7 @@ class ReplaceSmResp(PDU):
 
 
 class DeliverSm(PDU):
-    "Deliver Short Message "
+    "Deliver Short Message PDU type"
 
     command_id = Integer(command_ids.deliver_sm, 4)
     service_type = CString("")
@@ -192,6 +192,8 @@ class DeliverSm(PDU):
 
 
 class DeliverSmResp(PDU):
+    "Deliver Short Message Response PDU type"
+    
     command_id = Integer(command_ids.deliver_sm_resp, 4)
     message_id = CString("")
     #message deliver response TLV
