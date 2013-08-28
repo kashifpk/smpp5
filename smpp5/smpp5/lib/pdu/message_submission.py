@@ -106,7 +106,7 @@ class SubmitMultiResp(PDU):
 
 class QuerySm(PDU):
     "Query Submission PDU type"
-    
+
     command_id = Integer(command_ids.query_sm, 4)
     message_id = CString("")
     source_addr_ton = Integer(TON.INTERNATIONAL, 1)
@@ -116,7 +116,7 @@ class QuerySm(PDU):
 
 class QuerySmResp(PDU):
     "Query Submission Response PDU type"
-    
+
     command_id = Integer(command_ids.query_sm_resp, 4)
     message_id = CString("")
     final_date = CString("")
@@ -126,7 +126,7 @@ class QuerySmResp(PDU):
 
 class CancelSm(PDU):
     "Cancel Message Submission PDU type"
-    
+
     command_id = Integer(command_ids.cancel_sm, 4)
     service_type = CString("")
     message_id = CString("")
@@ -140,13 +140,13 @@ class CancelSm(PDU):
 
 class CancelSmResp(PDU):
     "Cancel Message Response PDU type"
-    
+
     command_id = Integer(command_ids.cancel_sm_resp, 4)
 
 
 class ReplaceSm(PDU):
     "Replace Short Message PDU type"
-    
+
     command_id = Integer(command_ids.replace_sm, 4)
     message_id = CString("")
     source_addr_ton = Integer(TON.INTERNATIONAL, 1)
@@ -162,12 +162,13 @@ class ReplaceSm(PDU):
 
 class ReplaceSmResp(PDU):
     "Replace Short Message Response PDU type"
-    
+
     command_id = Integer(command_ids.replace_sm_resp, 4)
+
 
 class DeliverSm(PDU):
     "Deliver Short Message "
-    
+
     command_id = Integer(command_ids.deliver_sm, 4)
     service_type = CString("")
     source_addr_ton = Integer(TON.INTERNATIONAL, 1)
@@ -188,7 +189,8 @@ class DeliverSm(PDU):
     sm_length = Integer(0, 1)                # page 134
     short_message = String("")
     #TLV Submission operations
-    
+
+
 class DeliverSmResp(PDU):
     command_id = Integer(command_ids.deliver_sm_resp, 4)
     message_id = CString("")
