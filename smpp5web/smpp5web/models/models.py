@@ -1,4 +1,3 @@
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -45,3 +44,14 @@ class User_Number(Base):
     def __init__(self, cell_number=None, user_id=None):
         self.user_id = user_id
         self.cell_number = cell_number
+
+class Prefix_Match(Base):
+    __tablename__ = 'prefix_match'
+    
+    prefix = Column(Unicode(4), primary_key=True)           
+    user_id = Column(Unicode(100), ForeignKey(User.user_id))
+        
+    def __init__(self, prefix=None, user_id=None):
+        self.prefix = prefix
+        self.user_id = user_id
+    
