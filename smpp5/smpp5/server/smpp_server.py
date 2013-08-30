@@ -14,9 +14,6 @@ from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status
 import db
 from db import DBSession
 from models import User, Sms, User_Number
-from smpp5.server.database_file import Database
-
-
 from smpp5.lib.session import SMPPSession
 
 
