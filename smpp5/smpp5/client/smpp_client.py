@@ -1,91 +1,97 @@
-import socket
+"""
+SMPP CLIENT INTERFACE
+"""
+
 from smpp5.lib.session import SMPPSession
-from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status, tlv_tag, message_state
+from smpp5.client.smpp_client import SMPPClient
 
 
-class SMPPClient(object):
-    '''
-    Client Class is responsible to encode PDUs and send them to Server and also decode the response get from Server
-    '''
+class ClientHandler(object):
 
     ip = None
     port = None
     system_id = None
     password = None
     system_type = None
-    session = None
-    validation_status = None
-    conn_status = 'noconn'
+    client = None
+    bind_type = None
+    status = None
+    recipient = None
+    message = None
 
     def __init__(self):
         pass
 
-    def connect(self, host, port):
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((host, port))
-            self.session = SMPPSession('client', self.socket)
-            print("Connection established successfully\n")
-            self.conn_status = 'connected'
-        except:
-            print("Connection Refused...Try Again\n")
+    def connect_info(self):
+        self.ip = input("Enter the server IP to connect\t\t\t")
+        self.port = input("Enter the server PORT to connect\t\t")
+        self.client = SMPPClient()
+        self.client.connect(self.ip, int(self.port))
 
-    def disconnect(self):
-        #TODO: close SMPPSession if not already closed
-        if(self.conn_status == 'connected'):
-            self.socket.close()
+        # If connection successfull then binding pdu is sent
+        if(self.client.conn_status == 'connected'):
+            print("****Enter the Binding PDU****")
+            print("1 . Press 1 for Bind Transmitter PDU Type")
+            print("2 . Press 2 for Bind Receiver PDU Type")
+            print("3 . Press 3 for Bind Transceiver PDU Type")
+            option = int(input())
+            if(option == 1):
+                self.bind_type = 'TX'
+            elif(option == 2):
+                self.bind_type = 'RX'
+            elif(option == 3):
+                self.bind_type = 'TRX'
+            else:
+                print("Invalid Option.....")
 
-    def login(self, mode, system_id, password, system_type):
-        if(self.conn_status == 'connected'):
-            self.session.bind(mode, system_id, password, system_type)
-            self.validation_status = self.session.validation_status
-            if(self.validation_status != 'success'):
-                print("Oops!!validation failed")
+        # Ask for credentials
+            if(self.bind_type in ['TX', 'RX', 'TRX']):
+                self.system_id = input("Enter the System Id        ")
+                self.password = input("Enter the Password        ")
+                self.system_type = input("Enter the System Type     ")
+                self.client.login(self.bind_type, self.system_id, self.password, self.system_type)
 
-    def send_sms(self, recipient, message, system_id):
-        if(self.conn_status == 'connected'):
-            message_id = self.session.send_sms(recipient, message, system_id)
-            print("\nMessage id of Message U have just sent is  "+str(message_id) + "\n")
+        # If cresentials validated successfully then menu is displayed to client
+            if(self.client.validation_status == 'success'):
+                print("\nSuccessfully Login")
+                while True:
+                    print("\n********************** MAIN MENU **********************************")
+                    print("\nPress 1 to send Short Text Message")
+                    print("Press 2 to query the status of previously submitted short Text Message")
+                    print("Press 3 to cancel a previously submitted Short Text Message")
+                    print("Press 4 to replace a previously submitted Short Text Message")
+                    print("Press 5 to exit")
+                    option = int(input())
+                    if(option == 1):
+                        self.recipient = input("Enter the Recipient                                   ")
+                        self.message = input("Enter the Short Message to send      ")
+                        self.recipient = '+92' + self.recipient[1:]
+                        self.client.send_sms(self.recipient, self.message, self.system_id)
+                    elif(option == 2):
+                        message_id = input("Enter the Message Id of Message whom Status is required    ")
+                        self.client.query_status(message_id)
+                    elif(option == 3):
+                        message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
+                        self.client.cancel_sms(message_id)
+                    elif(option == 4):
+                        message_id = input("Enter the Message Id of Message whom you want to replace    ")
+                        self.message = input("Enter the Short Message to replace previous sumbitted short message      ")
+                        self.client.replace_sms(message_id, self.message,)
+                    elif(option == 5):
+                        break
+                    else:
+                        print("\nInvalid Option......")
 
-    def query_status(self, message_id):
-        message_status = self.session.query_status(message_id)
-        if(message_status == message_state.DELIVERED):
-            print("\nYour Message having Message_id  "+str(message_id)+"  has been successfully Delievered\n")
-        elif(message_status == message_state.SCHEDULED):
-            print("\nYour Message having Message_id  "+str(message_id)+"  is scheduled and ready to deliever\n")
-        else:
-            print("\nSorry Provided Message_id doesnot exist\n")
+            else:
+                print("Oops! Login Failed...Try Again")
 
-    def cancel_sms(self, message_id):
-        cancel_status = self.session.cancel_sms(message_id)
-        if(cancel_status is False):
-            print("Message cancelling Failed Because Message has been already Delivered")
-        else:
-            print("Message with Message_id  "+str(message_id)+"  has been cancelled successfully")
-
-    def replace_sms(self, message_id, message):
-        replace_status = self.session.replace_sms(message_id, message)
-        if(replace_status is False):
-            print("Message replacement Failed Because Message has been already Delivered")
-        else:
-            print("Message with Message_id  "+str(message_id)+"  has been replaced successfully")
-
-    def logout(self):
-        if(self.conn_status == 'connected'):
-            self.session.unbind()
-
+        self.client.logout()
+        self.client.disconnect()
+        print("Thank You.....Good Bye!!")
 
 if __name__ == '__main__':
-    #Testing client
-    client = SMPPClient()
-    client.connect('127.0.0.1', 1337)
-    client.login('TX', '3TEST', 'secret08', 'SUBMIT1')
-    #client.send_sms('+923005381993', 'hello from asma project yessssss :-)', '3TEST')
-    #client.query_status(30)
-    #client.send_sms('+923365195924', 'hello to kiran :-)', '3TEST')
-    #client.query_status(70)
-    #client.query_status(15)
-    client.replace_sms(1, 'asma')
-    #client.cancel_sms(107)
-    client.logout()
-    client.disconnect()
+    client_handler = ClientHandler()
+    client_handler.connect_info()
+
+
+
