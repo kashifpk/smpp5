@@ -285,7 +285,7 @@ class SMPPSession(object):
                 P = ReplaceSm()
                 P.message_id = CString(str(message_id))
                 P.sequence_number = Integer(self._next_seq_num(), 4)
-                P.short_message = String(message)
+                P.short_message = CString(message)
                 data = P.encode()
                 self.socket.sendall(data)
                 R = self.get_pdu_from_socket()
