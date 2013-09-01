@@ -19,5 +19,5 @@ def read_sms():
     droid.smsSend(number,message)
     return "Message sent successfully"
 
-
+#Running at this host and port on android
 run(host= return_ip(), port=50111)
