@@ -25,8 +25,8 @@ try:
     
     # Note when some data is specified in urlopen then HTTP request type 
     # POST is used instead of GET request type
-    #Type the IP of wifi on your android
-    #run the send_sms.py on your android phone
+    # enter the IP of wifi on your android and port of your server
+    # run the send_sms.py on your android phone
 
             result = urllib2.urlopen("http://192.168.1.2:50111/" + 'sendsms', post_str).read()
             S.status = 'delivered'
