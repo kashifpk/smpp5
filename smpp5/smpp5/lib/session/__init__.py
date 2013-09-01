@@ -199,6 +199,7 @@ class SMPPSession(object):
         print(P.system_type.value)
 
     def send_sms(self, recipient, message, system_id):
+        "This method is responsible for taking the Sumbit short message request send by client and writes it to the socket to be read by server."
         try:
             if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
                 raise Exception("\nSMPP Session not in a state that allows sending SMSes")
@@ -216,6 +217,7 @@ class SMPPSession(object):
             print(e)
 
     def process_sms(self, P):
+        "This method is responsible for handling the request sent by client and sending the response pdu to the client for successfull submission"
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             db_storage = self.server_db_store(P.destination_addr.value, P.short_message.value, self.user_id)
             # in db_storage the message id of sms is returned
