@@ -219,6 +219,7 @@ class SMPPSession(object):
     def process_sms(self, P):
         "This method is responsible for handling the request sent by client and sending the response pdu to the client for successfull submission"
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            # storing all the values to a variable
             db_storage = self.server_db_store(P.destination_addr.value, P.short_message.value, self.user_id)
             # in db_storage the message id of sms is returned
             R = SubmitSmResp()
