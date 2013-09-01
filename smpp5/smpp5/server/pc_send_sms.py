@@ -1,4 +1,4 @@
-'''This file is responsible for reading the outgoing smses from database sent by client
+'''This background process is responsible for reading the outgoing smses from database sent by client
 and post them to the url on bottle server
 '''
 
