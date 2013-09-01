@@ -1,3 +1,8 @@
+'''This file is responsible for reading the outgoing smses from database sent by client
+and post them to the url on bottle server
+'''
+
+
 import urllib2
 import urllib
 import db
