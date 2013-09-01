@@ -10,6 +10,9 @@ def return_ip():
 
 @post('/sendsms')
 def read_sms():
+    '''This method is responsible for reading sms from url to which smpp server has posted and send to the particular recipient
+    '''
+    
     number = request.forms.number
     message = request.forms.message 
     droid = android.Android()
