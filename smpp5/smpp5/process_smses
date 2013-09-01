@@ -17,9 +17,9 @@ while True:
 
         for msg in msgs:
             post_args = dict(address=msg[u'address'], body=msg[u'body'])
-            post_data = urllib.urlencode(post_args)
+            post_data = urllib.urlencode(post_args) # urlencode converts the dict to a string suitable for POST
             response = urllib2.urlopen(post_url, post_data).read()
-            myre = re.compile("<h1>(.*)</h1>")
+            myre = re.compile("<h1>(.*)</h1>") # extract the read sms inside this header tag
             result = myre.findall(response)
             print(result)
             processed_msgs.append(msg[u'_id'])
