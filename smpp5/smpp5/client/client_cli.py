@@ -45,12 +45,13 @@ class ClientHandler(object):
                 print("Invalid Option.....")
 
         # Ask for credentials
-            self.system_id = input("Enter the System Id        ")
-            self.password = input("Enter the Password        ")
-            self.system_type = input("Enter the System Type     ")
-            self.client.login(self.bind_type, self.system_id, self.password, self.system_type)
+            if(self.bind_type in ['TX', 'RX', 'TRX']):
+                self.system_id = input("Enter the System Id        ")
+                self.password = input("Enter the Password        ")
+                self.system_type = input("Enter the System Type     ")
+                self.client.login(self.bind_type, self.system_id, self.password, self.system_type)
 
-        # If cresentials validated successfully then menu is displayed to client
+        # If credentials validated successfully then menu is displayed to client
             if(self.client.validation_status == 'success'):
                 print("\nSuccessfully Login")
                 while True:
@@ -65,18 +66,17 @@ class ClientHandler(object):
                         self.recipient = input("Enter the Recipient                                   ")
                         self.message = input("Enter the Short Message to send      ")
                         self.recipient = '+92' + self.recipient[1:]
-                        self.client.send_sms(self.recipient, self.message, self.system_id)
-                        #print "took the data"
+                        self.client.send_sms(self.recipient, self.message)
                     elif(option == 2):
-                        message_id = input("Enter the Message Id of Message whose Status is required    ")
+                        message_id = input("Enter the Message Id of Message whom Status is required    ")
                         self.client.query_status(message_id)
                     elif(option == 3):
-                        message_id = input("Enter the Message Id of Message you want to cancel    ")
+                        message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
                         self.client.cancel_sms(message_id)
                     elif(option == 4):
-                        message_id = input("Enter the Message Id of Message you want to replace    ")
-                        self.message = input("Enter the Short Message to replace recently sumbitted short message      ")
-                        self.client.replace_sms(message_id, self.message)
+                        message_id = input("Enter the Message Id of Message whom you want to replace    ")
+                        self.message = input("Enter the Short Message to replace previous sumbitted short message      ")
+                        self.client.replace_sms(message_id, self.message,)
                     elif(option == 5):
                         break
                     else:
