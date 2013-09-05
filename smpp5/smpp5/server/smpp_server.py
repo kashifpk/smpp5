@@ -13,7 +13,10 @@ from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status
 
 import db
 from db import DBSession
-from models import User, Sms, User_Number
+from models import User, Sms, User_Number, Prefix_Match
+from smpp5.server.database_file import Database
+
+
 from smpp5.lib.session import SMPPSession
 
 
@@ -55,7 +58,7 @@ class SMPPServer(object):
             while True:
                 self.socket.listen(1)  # listening for connections
                 print("listening......")
-                conn, addr = self.socket.accept()  # accept connections and return ip and port 
+                conn, addr = self.socket.accept()  # accept connections and return ip and port
 
                 P = multiprocessing.Process(target=handle_client_connection, args=(conn, addr))
                 P.start()
@@ -82,16 +85,14 @@ class SMPPServer(object):
     def db_storage(recipient, message, user_id):
         recipient = recipient.decode(encoding='ascii')
         message = message.decode(encoding='ascii')
-        user = DBSession.query(User_Number).filter_by(cell_number=recipient, user_id=user_id).first()
-        if(user is None):
-            U = User_Number()
-            U.cell_number = recipient
-            U.user_id = user_id
-            DBSession.add(U)
-            transaction.commit()
+        user = DBSession.query(User_Number).filter_by(user_id=user_id).first()
+        t_user = DBSession.query(Prefix_Match).filter_by(user_id=user_id).first()
         S = Sms()
         S.sms_type = 'outgoing'
-        S.sms_from = 'None'
+        if(user is not None):
+            S.sms_from = user.cell_number
+        else:
+            S.sms_from = t_user.prefix
         S.sms_to = recipient
         S.msg = message
         S.timestamp = datetime.datetime.now()
@@ -106,7 +107,6 @@ class SMPPServer(object):
     def query_result(message_id):
         message_id = int(message_id.decode(encoding='ascii'))
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
-    # if 22 returns then no such message_id exist
         if(smses is None):
             return(command_status.ESME_RQUERYFAIL)
         elif(smses.status == 'scheduled'):
