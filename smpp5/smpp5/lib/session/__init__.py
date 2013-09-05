@@ -198,8 +198,11 @@ class SMPPSession(object):
         print(P.password.value)
         print(P.system_type.value)
 
-    def send_sms(self, recipient, message, system_id):
-        "This method is responsible for taking the Sumbit short message request send by client and writes it to the socket to be read by server."
+    def send_sms(self, recipient, message):
+        """
+        This method is responsible for taking the Sumbit short message request send by client and writes it to
+        the socket to be read by server.
+        """
         try:
             if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
                 raise Exception("\nSMPP Session not in a state that allows sending SMSes")
@@ -208,7 +211,6 @@ class SMPPSession(object):
                 P.sequence_number = Integer(self._next_seq_num(), 4)
                 P.destination_addr = CString(recipient)
                 P.short_message = CString(str(message))
-                print(P.short_message.value)
                 data = P.encode()
                 self.socket.sendall(data)
                 R = self.get_pdu_from_socket()
@@ -217,9 +219,11 @@ class SMPPSession(object):
             print(e)
 
     def process_sms(self, P):
-        "This method is responsible for handling the request sent by client and sending the response pdu to the client for successfull submission"
+        """
+        This method is responsible for handling the request sent by client and sending the response pdu to the client
+        for successfull submission
+        """
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
-            # storing all the values to a variable
             db_storage = self.server_db_store(P.destination_addr.value, P.short_message.value, self.user_id)
             # in db_storage the message id of sms is returned
             R = SubmitSmResp()
@@ -229,6 +233,10 @@ class SMPPSession(object):
             self.socket.sendall(data)
 
     def query_status(self, message_id):
+        """
+        This method is responsible for querying the status of message that either it is delievered or still
+        scheduled
+        """
         try:
             if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
                 raise Exception("\nSMPP Session not in a state that allows querying SMSes")
@@ -244,6 +252,9 @@ class SMPPSession(object):
             print(e)
 
     def process_query(self, P):
+        """
+        This message is responsible for handling querying request and returning status of message
+        """
         query_result = self.server_query_result(P.message_id.value)
         R = QuerySmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -254,6 +265,9 @@ class SMPPSession(object):
         self.socket.sendall(data)
 
     def cancel_sms(self, message_id):
+        """
+        This method is responsible for requesting the cancelling of particular message
+        """
         try:
             if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
                 raise Exception("\nSMPP Session not in a state that allows cancelling SMSes")
@@ -272,6 +286,9 @@ class SMPPSession(object):
             print(e)
 
     def process_sms_cancelling(self, P):
+        """
+        This method is responsible for handling cancel request and cancels the message if it is not yet delivered
+        """
         cancel_result = self.server_cancel_result(P.message_id.value)
         R = CancelSmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -281,6 +298,9 @@ class SMPPSession(object):
         self.socket.sendall(data)
 
     def replace_sms(self, message_id, message):
+        """
+        This method is responsible for requesting the replacing of particular short message.
+        """
         try:
             if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
                 raise Exception("SMPP Session not in a state that allows replacing SMSes")
@@ -300,6 +320,10 @@ class SMPPSession(object):
             print(e)
 
     def process_replace_sms(self, P):
+        """
+        This method is responsible for handling replacing request and replace short message if it is not
+        yet delivered.
+        """
         replace_sms = self.server_replace_result(P.message_id.value, P.short_message.value)
         R = ReplaceSmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
