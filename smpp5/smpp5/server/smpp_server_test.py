@@ -99,16 +99,14 @@ class SMPPServer(object):
     def db_storage(recipient, message, user_id):
         recipient = recipient.decode(encoding='ascii')
         message = message.decode(encoding='ascii')
-        #user = DBSession.query(User_Number).filter_by(cell_number=recipient, user_id=user_id).first()
-        #if(user is None):
-        #    U = User_Number()
-        #    U.cell_number = recipient
-        #    U.user_id = user_id
-        #    DBSession.add(U)
-        #    transaction.commit()
+        user = DBSession.query(User_Number).filter_by(user_id=user_id).first()
+        t_user = DBSession.query(Prefix_Match).filter_by(user_id=user_id).first()
         S = Sms()
         S.sms_type = 'outgoing'
-        S.sms_from = 'None'
+        if(user is not None):
+            S.sms_from = user.cell_number
+        else:
+            S.sms_from = t_user.prefix
         S.sms_to = recipient
         S.msg = message
         S.timestamp = datetime.datetime.now()
@@ -119,7 +117,7 @@ class SMPPServer(object):
         transaction.commit()
         sms = DBSession.query(Sms)[-1]
         return(sms.id)
-
+        
     def query_result(message_id):
         message_id = int(message_id.decode(encoding='ascii'))
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
