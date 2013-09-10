@@ -7,6 +7,7 @@ server create an instance of SMPPSession to communicate with each other.
 
 """
 import sys
+import time
 import socket
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.util.hex_print import hex_convert, hex_print
@@ -80,6 +81,7 @@ class SMPPSession(object):
         self.server_query_result = ''
         self.server_cancel_result = ''
         self.server_replace_result = ''
+        self.server_fetch_incoming_smses = ''
         self.validation_status = None
         self.user_id = None
 
@@ -121,12 +123,12 @@ class SMPPSession(object):
             self.process_replace_sms(P)
 
     def close(self):
-        P = self.get_pdu_from_socket()
-        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX, SessionState.BOUND_RX]:
+            P = self.get_pdu_from_socket()
             while P.command_id.value != command_ids.unbind:
                 self.handle_pdu(P)
                 P = self.get_pdu_from_socket()
-        self.handle_unbind(P)
+            self.handle_unbind(P)
 
     def unbind(self):
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
@@ -211,6 +213,7 @@ class SMPPSession(object):
                 P.sequence_number = Integer(self._next_seq_num(), 4)
                 P.destination_addr = CString(recipient)
                 P.short_message = CString(str(message))
+                P.replace_if_present_flag = Integer(1, 1)
                 data = P.encode()
                 self.socket.sendall(data)
                 R = self.get_pdu_from_socket()
