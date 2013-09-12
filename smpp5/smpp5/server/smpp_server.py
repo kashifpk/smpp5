@@ -70,6 +70,10 @@ class SMPPServer(object):
             print("Good bye!")
 
     def validate(system_id, password, system_type):
+        """
+        This method is responsible for validating credentials provided by client and return True
+        if credentials validated successfully.
+        """
         db.bind_session()
         system_id = system_id.decode(encoding='ascii')
         passhash = hashlib.sha1(bytes(password.decode(encoding='ascii'), encoding="utf8")).hexdigest()
@@ -83,6 +87,9 @@ class SMPPServer(object):
             return 'false'
 
     def db_storage(recipient, message, user_id):
+        """
+        This method is responsible for storing the sms details in database
+        """
         recipient = recipient.decode(encoding='ascii')
         message = message.decode(encoding='ascii')
         user = DBSession.query(User_Number).filter_by(user_id=user_id).first()
