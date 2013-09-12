@@ -123,6 +123,10 @@ class SMPPSession(object):
             self.process_replace_sms(P)
 
     def close(self):
+        """
+        This method is responsible to recieve PDUs and send them to handle_bind method to handle it properly,
+        till PDU recieved is Unbind PDU.
+        """
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX, SessionState.BOUND_RX]:
             P = self.get_pdu_from_socket()
             while P.command_id.value != command_ids.unbind:
@@ -131,6 +135,9 @@ class SMPPSession(object):
             self.handle_unbind(P)
 
     def unbind(self):
+        """
+        This method is responsible to send Unbind request to server
+        """
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             P = UnBind()
             P.sequence_number = Integer(self._next_seq_num(), 4)
