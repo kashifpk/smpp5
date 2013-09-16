@@ -1,9 +1,12 @@
 import socket
-from smpp5.lib.session import SMPPSession
+from smpp5.lib.session import SMPPSession, SessionState
 from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status, tlv_tag, message_state
 
 
-class SMPPClient(object):
+# Note: This whole module seems mostly unnecessary. We either need this or client_cli module, not both.
+# We can keep this one but should remove most of the methods here as they are implemented in session
+
+class SMPPClient_(object):
     '''
     Client Class is responsible to encode PDUs and send them to Server and also decode the response get from Server
     '''
@@ -13,40 +16,54 @@ class SMPPClient(object):
     system_id = None
     password = None
     system_type = None
+    bind_mode = None
     session = None
-    validation_status = None
-    conn_status = 'noconn'
+    #validation_status = None  # not required, have session.state for that
+    #conn_status = 'noconn'  # don't need it since we have session.state for that
 
-    def __init__(self):
-        pass
+    def __init__(self, ip, port, bind_mode, system_id, password, system_type):
+        self.ip = ip
+        self.port = port
+        self.bind_mode = bind_mode
+        self.system_id = system_id
+        self.password = password
+        self.system_type = system_type
 
-    def connect(self, host, port):
+    def connect(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((host, port))
+            self.socket.connect((self.ip, self.port))
             self.session = SMPPSession('client', self.socket)
-            print("Connection established successfully\n")
-            self.conn_status = 'connected'
         except:
-            print("Connection Refused...Try Again\n")
+            return False
+
+        return True
 
     def disconnect(self):
         #TODO: close SMPPSession if not already closed
         if(self.conn_status == 'connected'):
             self.socket.close()
 
-    def login(self, mode, system_id, password, system_type):
-        if(self.conn_status == 'connected'):
+    def login(self):
+        ret = False
+        if SessionState.OPEN == self.session.state:
             self.session.bind(mode, system_id, password, system_type)
-            self.validation_status = self.session.validation_status
-            if(self.validation_status != 'success'):
-                print("Oops!!validation failed")
+            if self.session.state in [SessionState.BOUND_RX, SessionState.BOUND_TX, SessionState.BOUND_TRX]:
+                return True
+
+        return ret
 
     def send_sms(self, recipient, message):
-        if(self.conn_status == 'connected'):
-            message_id = self.session.send_sms(recipient, message)
-            if(message_id is not None):
-                print("\nMessage id of Message U have just sent is  "+str(message_id) + "\n")
+        # Note: look at this method, it seems rather redundant as it just calls the session's send_sms
+        # method. So we don't need all these methods here. Only operations requiring some code outside
+        # of Session class should have methods in the Client class
+
+        # cannot get message id here. Just store the pdu info against the sequence numbers list
+        # somewhere
+        #message_id = self.session.send_sms(recipient, message)
+        self.session.send_sms(recipient, message)
+        #if(message_id is not None):
+        #    print("\nMessage id of Message U have just sent is  "+str(message_id) + "\n")
 
     def query_status(self, message_id):
         message_status = self.session.query_status(message_id)

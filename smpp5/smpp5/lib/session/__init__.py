@@ -46,6 +46,10 @@ from smpp5.lib.pdu.message_submission import (
     DeliverSmResp)
 
 
+class InvalidSessionState(Exception):
+    pass
+
+
 class SessionState(object):
     """
     Possible session states
@@ -61,6 +65,11 @@ class SessionState(object):
 
 
 class SMPPSession(object):
+
+    allowed_actions = {
+        'submit_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
+        'deliver_sm': [SessionState.BOUND_TRX, SessionState.BOUND_RX]
+    }
 
     def __init__(self, session_end, socket):
         """
@@ -80,8 +89,15 @@ class SMPPSession(object):
         self.server_query_result = ''
         self.server_cancel_result = ''
         self.server_replace_result = ''
-        self.validation_status = None
+        #self.validation_status = None  # not required as we can determine this from session's state
         self.user_id = None
+
+    def _can_do(self, action):
+        "Validates if an action can be performed in current session state or not"
+        if self.state in self.allowed_actions[action]:
+            return True
+        else:
+            return False
 
     def _next_seq_num(self):
         self._seq_num += 1
@@ -90,6 +106,12 @@ class SMPPSession(object):
     def get_pdu_from_socket(self):
         """
         Given a socket, returns a completed PDU and blocks until a PDU is received
+
+        For non-blocking sockets see:
+
+        * http://docs.python.org/2/howto/sockets.html#non-blocking-sockets
+        * http://stackoverflow.com/questions/2719017/how-to-set-timeout-on-pythons-socket-recv-method
+        * http://docs.python.org/2/library/select.html#select.select
         """
         #First wait till 4 bytes a read from the socket (command_length)
         d = self.socket.recv(4, socket.MSG_WAITALL)
@@ -153,11 +175,10 @@ class SMPPSession(object):
         P.system_type = CString(system_type)
         data = P.encode()
         self.socket.sendall(data)
-        print("    Bind pdu sent to server by client   ")
+        #print("    Bind pdu sent to server by client   ")
         # recieving the response from server
         P = self.get_pdu_from_socket()
         if(P.command_status.value == 0):
-            self.validation_status = 'success'
             self.state = bind_types[bind_type]['state']
 
     def handle_bind(self, validate):
@@ -203,20 +224,21 @@ class SMPPSession(object):
         This method is responsible for taking the Sumbit short message request send by client and writes it to
         the socket to be read by server.
         """
-        try:
-            if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
-                raise Exception("\nSMPP Session not in a state that allows sending SMSes")
-            else:
-                P = SubmitSm()
-                P.sequence_number = Integer(self._next_seq_num(), 4)
-                P.destination_addr = CString(recipient)
-                P.short_message = CString(str(message))
-                data = P.encode()
-                self.socket.sendall(data)
-                R = self.get_pdu_from_socket()
-                return(R.message_id.value.decode(encoding='ascii'))
-        except Exception as e:
-            print(e)
+
+        if not self._can_do('submit_sm'):
+            raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes")
+
+        P = SubmitSm()
+        P.sequence_number = Integer(self._next_seq_num(), 4)
+        # Where is source address????
+        P.destination_addr = CString(recipient)
+        P.short_message = CString(str(message))
+        data = P.encode()
+        self.socket.sendall(data)
+
+        # We don't handle return here, it should be asynchronous
+        R = self.get_pdu_from_socket()
+        return(R.message_id.value.decode(encoding='ascii'))
 
     def process_sms(self, P):
         """
