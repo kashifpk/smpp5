@@ -47,7 +47,8 @@ from smpp5.lib.pdu.message_submission import (
 
 
 class InvalidSessionState(Exception):
-    pass
+    def __init__(self):
+        print(Exception)
 
 
 class SessionState(object):
@@ -68,6 +69,9 @@ class SMPPSession(object):
 
     allowed_actions = {
         'submit_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
+        'query_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
+        'cancel_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
+        'replace_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
         'deliver_sm': [SessionState.BOUND_TRX, SessionState.BOUND_RX]
     }
 
@@ -84,12 +88,13 @@ class SMPPSession(object):
         self.socket = socket
         self.state = SessionState.OPEN
         self._seq_num = 0
+        self.responses = {}
+        self.unread_smses = []
         self.server_validate_method = ''
         self.server_db_store = ''
         self.server_query_result = ''
         self.server_cancel_result = ''
         self.server_replace_result = ''
-        #self.validation_status = None  # not required as we can determine this from session's state
         self.user_id = None
 
     def _can_do(self, action):
@@ -150,13 +155,32 @@ class SMPPSession(object):
                 P = self.get_pdu_from_socket()
         self.handle_unbind(P)
 
+    def client_recieve_pdus(self):
+        '''
+        Client use this method to recieve response PDU's and calls appropriate methods to handle it.
+        '''
+
+        while True:
+            P = self.get_pdu_from_socket()
+            if(responses[R.sequence_number]):
+                if(command_ids.submit_sm_resp == R.command_id.value):
+                    self.send_sms_response(P)
+                elif(command_ids.query_sm_resp == R.command_id.value):
+                    self.query_sms_response(P)
+                elif(command_ids.replace_sm_resp == R.command_id.value):
+                    self.replace_sms_response(P)
+                elif(command_ids.cancel_sm_resp == R.command_id.value):
+                    self.cancel_sms_response(P)
+                elif(command_ids.unbind_resp == R.command_id.value):
+                    self.state = SessionState.UNBOUND
+            del responses[R.sequence_number]
+
     def unbind(self):
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             P = UnBind()
             P.sequence_number = Integer(self._next_seq_num(), 4)
+            self.responses.update({P.sequence_number.value: P})
             self.socket.sendall(P.encode())
-            resp_pdu = self.get_pdu_from_socket()
-            self.state = SessionState.UNBOUND
 
     def bind(self, bind_type, system_id, password, system_type):
         """
@@ -175,7 +199,6 @@ class SMPPSession(object):
         P.system_type = CString(system_type)
         data = P.encode()
         self.socket.sendall(data)
-        #print("    Bind pdu sent to server by client   ")
         # recieving the response from server
         P = self.get_pdu_from_socket()
         if(P.command_status.value == 0):
@@ -201,6 +224,7 @@ class SMPPSession(object):
             if(validate == 'True'):
                 self.validation_status = 'success'
                 self.user_id = P.system_id.value.decode(encoding='ascii')
+                print(self.user_id)
                 self.state = pdu[P.__class__.__name__]['state']
                 R = pdu[P.__class__.__name__]['response']()
                 R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -230,15 +254,13 @@ class SMPPSession(object):
 
         P = SubmitSm()
         P.sequence_number = Integer(self._next_seq_num(), 4)
-        # Where is source address????
+        P.source_addr = CString(str(self.user_id))
         P.destination_addr = CString(recipient)
         P.short_message = CString(str(message))
         data = P.encode()
+        #storing pdu in dictionary named responses
+        self.responses.update({P.sequence_number.value: P})
         self.socket.sendall(data)
-
-        # We don't handle return here, it should be asynchronous
-        R = self.get_pdu_from_socket()
-        return(R.message_id.value.decode(encoding='ascii'))
 
     def process_sms(self, P):
         """
@@ -254,24 +276,22 @@ class SMPPSession(object):
             data = R.encode()
             self.socket.sendall(data)
 
+    def send_sms_response(self, P):
+        message_id = P.message_id.value
+
     def query_status(self, message_id):
         """
         This method is responsible for querying the status of message that either it is delievered or still
         scheduled
         """
-        try:
-            if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
-                raise Exception("\nSMPP Session not in a state that allows querying SMSes")
-            else:
-                P = QuerySm()
-                P.sequence_number = Integer(self._next_seq_num(), 4)
-                P.message_id = CString(str(message_id))
-                data = P.encode()
-                self.socket.sendall(data)
-                R = self.get_pdu_from_socket()
-                return(R.message_state.value)
-        except Exception as e:
-            print(e)
+        if not self._can_do('submit_sm'):
+            raise InvalidSessionState("SMPP Session not in a state that allows querying SMSes")
+
+        P = QuerySm()
+        P.sequence_number = Integer(self._next_seq_num(), 4)
+        P.message_id = CString(str(message_id))
+        self.responses.update({P.sequence_number.value: P})
+        self.socket.sendall(P.encode())
 
     def process_query(self, P):
         """
@@ -286,26 +306,21 @@ class SMPPSession(object):
         data = R.encode()
         self.socket.sendall(data)
 
+    def query_sms_response(self, P):
+        message_state = P.message_state.value
+
     def cancel_sms(self, message_id):
         """
         This method is responsible for requesting the cancelling of particular message
         """
-        try:
-            if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
-                raise Exception("\nSMPP Session not in a state that allows cancelling SMSes")
-            else:
-                P = CancelSm()
-                P.sequence_number = Integer(self._next_seq_num(), 4)
-                P.message_id = CString(str(message_id))
-                data = P.encode()
-                self.socket.sendall(data)
-                R = self.get_pdu_from_socket()
-                if(R.command_status.value == 0):
-                    return True
-                else:
-                    return False
-        except Exception as e:
-            print(e)
+        if not self._can_do('submit_sm'):
+            raise InvalidSessionState("SMPP Session not in a state that allows cancelling SMSes")
+
+        P = CancelSm()
+        P.sequence_number = Integer(self._next_seq_num(), 4)
+        P.message_id = CString(str(message_id))
+        self.responses.update({P.sequence_number.value: P})
+        self.socket.sendall(P.encode())
 
     def process_sms_cancelling(self, P):
         """
@@ -319,27 +334,22 @@ class SMPPSession(object):
         data = R.encode()
         self.socket.sendall(data)
 
+    def cancel_sms_response(self, P):
+        command_state = P.command_status.value
+
     def replace_sms(self, message_id, message):
         """
         This method is responsible for requesting the replacing of particular short message.
         """
-        try:
-            if self.state not in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
-                raise Exception("SMPP Session not in a state that allows replacing SMSes")
-            else:
-                P = ReplaceSm()
-                P.message_id = CString(str(message_id))
-                P.sequence_number = Integer(self._next_seq_num(), 4)
-                P.short_message = CString(message)
-                data = P.encode()
-                self.socket.sendall(data)
-                R = self.get_pdu_from_socket()
-                if(R.command_status.value == 0):
-                    return True
-                else:
-                    return False
-        except Exception as e:
-            print(e)
+        if not self._can_do('submit_sm'):
+            raise InvalidSessionState("SMPP Session not in a state that allows replacing SMSes")
+
+        P = ReplaceSm()
+        P.message_id = CString(str(message_id))
+        P.sequence_number = Integer(self._next_seq_num(), 4)
+        P.short_message = CString(message)
+        self.responses.update({P.sequence_number.value: P})
+        self.socket.sendall(P.encode())
 
     def process_replace_sms(self, P):
         """
@@ -353,6 +363,9 @@ class SMPPSession(object):
             R.command_status = Integer(command_status.ESME_RREPLACEFAIL, 4)
         data = R.encode()
         self.socket.sendall(data)
+
+    def replace_sms_response(self, P):
+        command_state = P.command_status.value
 
     def handle_unbind(self, P):
         """
