@@ -3,7 +3,7 @@ from pyramid.httpexceptions import HTTPFound
 import datetime
 
 from ..models import (
-    DBSession, Sms, User_Number, Prefix_Match)
+    DBSession, Sms, User_Number, Prefix_Match, Packages, Selected_package, Rates)
 
 from ..auth import (User)
 
@@ -64,5 +64,34 @@ def say(request):
         return{}
 
 
+@view_config(route_name='main_page', renderer='main_page.mako')
+def mainpage(request):
+    user = request.session['logged_in_user']
+    return{'user': user}
 
-    
+
+@view_config(route_name='sms_history', renderer='sms_history.mako')
+def sms_history(request):
+    user = request.session['logged_in_user']
+    smses = DBSession.query(Sms).filter_by(user_id=user).all()
+    return{'smses': smses}
+
+
+@view_config(route_name='billing', renderer='billing.mako')
+def billing(request):
+    user = request.session['logged_in_user']
+    package_rates = 0.0
+    smses_rates = 0.0
+    selected_packages = DBSession.query(Selected_package).filter_by(user_id=user).all()
+    if(selected_packages):
+        for p in selected_packages:
+            package_rates = package_rates+p.rates
+    smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing').all()
+    if(smses):
+        for s in smses:
+            smses_rates = smses_rates+s.rates
+    total_bill = package_rates+smses_rates
+
+    return{'smses': smses, 'package_rates': package_rates, 'smses_rates': smses_rates, 'total_bill': total_bill}
+
+
