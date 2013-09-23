@@ -8,12 +8,13 @@ import hashlib
 import transaction
 import multiprocessing
 import datetime
+import threading
 
 from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status, tlv_tag, message_state
 
 import db
 from db import DBSession
-from models import User, Sms, User_Number, Prefix_Match
+from models import User, Sms, User_Number, Prefix_Match, Packages, Selected_package, Rates
 from smpp5.server.database_file import Database
 
 
@@ -26,11 +27,14 @@ def handle_client_connection(conn, addr):
     """
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
+    server_session.server_fetch_incoming_smses = SMPPServer.fetch_incoming_sms
     server_session.handle_bind(SMPPServer.validate)  # passing validate function name to handle_bind method to let the session instance call it 
     server_session.server_db_store = SMPPServer.db_storage
     server_session.server_query_result = SMPPServer.query_result
     server_session.server_cancel_result = SMPPServer.cancel_result
     server_session.server_replace_result = SMPPServer.replace_result
+    #SMPPServer.multithread(server_session)
+    #server_session.server_fetch_incoming_smses = SMPPServer.fetch_incoming_sms
     server_session.close()
     time.sleep(5)
     conn.close()
@@ -38,7 +42,7 @@ def handle_client_connection(conn, addr):
 
 class SMPPServer(object):
     '''
-    Server class is responsible for recieving PDUs from client and decode them and also for sending encoded PDUs response
+    Server class is responsible for recieving PDUs from client & decode them and also for sending encoded PDUs response
     '''
 
     def __init__(self):
@@ -70,10 +74,6 @@ class SMPPServer(object):
             print("Good bye!")
 
     def validate(system_id, password, system_type):
-        """
-        This method is responsible for validating credentials provided by client and return True
-        if credentials validated successfully.
-        """
         db.bind_session()
         system_id = system_id.decode(encoding='ascii')
         passhash = hashlib.sha1(bytes(password.decode(encoding='ascii'), encoding="utf8")).hexdigest()
@@ -86,34 +86,68 @@ class SMPPServer(object):
             print("Validation failed")
             return 'false'
 
+    def fetch_incoming_sms():
+        try:
+            sms = DBSession.query(Sms).filter_by(sms_type='incoming').first()
+            return(sms)
+        except (KeyboardInterrupt, SystemExit):
+            print("Good bye!")
+            sys.exit()
+
     def db_storage(recipient, message, user_id):
-        """
-        This method is responsible for storing the sms details in database
-        """
         recipient = recipient.decode(encoding='ascii')
         message = message.decode(encoding='ascii')
         user = DBSession.query(User_Number).filter_by(user_id=user_id).first()
         t_user = DBSession.query(Prefix_Match).filter_by(user_id=user_id).first()
+        selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).first()
         S = Sms()
         S.sms_type = 'outgoing'
         if(user is not None):
-            S.sms_from = user.cell_number
+                S.sms_from = user.cell_number
         else:
-            S.sms_from = t_user.prefix
+                S.sms_from = t_user.prefix
         S.sms_to = recipient
         S.msg = message
         S.timestamp = datetime.datetime.now()
         S.status = 'scheduled'
         S.msg_type = 'text'
         S.user_id = user_id
+        if(selected_package is None):
+            S.package_name = None
+            SMPPServer.set_rates(user, t_user, S, recipient)
+        else:
+            if(selected_package.end_date < datetime.date.today() and selected_packages.smses > 0):
+                S.package_name = selected_package.package_name
+                S.rates = 0.0
+                selected_packages.smses = selected_packages.smses-1
+            else:
+                SMPPServer.set_rates(user, t_user, S, recipient)
+
         DBSession.add(S)
         transaction.commit()
         sms = DBSession.query(Sms)[-1]
         return(sms.id)
 
+    def set_rates(user, t_user, S, recipient):
+        if(user):
+                if('0'+recipient[3:6] == '0'+user.cell_number[3:6]):
+                    sms_rates = DBSession.query(Rates).filter_by(network_type='same').first()
+                    S.rates = sms_rates.rates
+                else:
+                    sms_rates = DBSession.query(Rates).filter_by(network_type='different').first()
+                    S.rates = sms_rates.rates
+        else:
+                if('0'+recipient[3:6] == t_user.prefix):
+                    sms_rates = DBSession.query(Rates).filter_by(network_type='same').first()
+                    S.rates = sms_rates.rates
+                else:
+                    sms_rates = DBSession.query(Rates).filter_by(network_type='different').first()
+                    S.rates = sms_rates.rates
+
     def query_result(message_id):
         message_id = int(message_id.decode(encoding='ascii'))
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
+    # if 22 returns then no such message_id exist
         if(smses is None):
             return(command_status.ESME_RQUERYFAIL)
         elif(smses.status == 'scheduled'):
@@ -149,3 +183,4 @@ if __name__ == '__main__':
     S.start_serving('127.0.0.1', 1337)
 
 
+# surah toba verses 128 and 129
