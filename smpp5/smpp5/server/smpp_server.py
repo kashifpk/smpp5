@@ -99,7 +99,10 @@ class SMPPServer(object):
         message = message.decode(encoding='ascii')
         user = DBSession.query(User_Number).filter_by(user_id=user_id).first()
         t_user = DBSession.query(Prefix_Match).filter_by(user_id=user_id).first()
-        selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).first()
+        total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
+        if(total_selected_package > 0):
+            selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id)[-1]
+            print(selected_package.smses)
         S = Sms()
         S.sms_type = 'outgoing'
         if(user is not None):
@@ -116,12 +119,15 @@ class SMPPServer(object):
             S.package_name = None
             SMPPServer.set_rates(user, t_user, S, recipient)
         else:
-            if(selected_package.end_date < datetime.date.today() and selected_packages.smses > 0):
-                S.package_name = selected_package.package_name
-                S.rates = 0.0
-                selected_packages.smses = selected_packages.smses-1
-            else:
-                SMPPServer.set_rates(user, t_user, S, recipient)
+            end_date = selected_package.end_date
+            today_date = datetime.datetime.now()
+            if(end_date.day <= today_date.day or end_date.month < today_date.month):
+                if(int(selected_package.smses) > 0):
+                    S.package_name = selected_package.package_name
+                    S.rates = 0.0
+                    selected_package.smses = selected_package.smses-1
+                else:
+                    SMPPServer.set_rates(user, t_user, S, recipient)
 
         DBSession.add(S)
         transaction.commit()
