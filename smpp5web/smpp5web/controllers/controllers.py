@@ -95,3 +95,39 @@ def billing(request):
     return{'smses': smses, 'package_rates': package_rates, 'smses_rates': smses_rates, 'total_bill': total_bill}
 
 
+@view_config(route_name='graphs', renderer='graphs.mako')
+def graph(request):
+    user = request.session['logged_in_user']
+    smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing').all()
+    return{'smses': smses}
+
+
+@view_config(route_name='packages', renderer='packages.mako')
+def packages(request):
+    user = request.session['logged_in_user']
+    if "POST" == request.method:
+        package_name = request.POST['package_name']
+        package = DBSession.query(Packages).filter_by(package_name=package_name).first()
+        duration = int(package.duration)
+        S = Selected_package()
+        S.user_id = user
+        S.package_name = package_name
+        S.smses = package.smses
+        S.rates = package.rates
+        S.start_date = datetime.date.today()
+        S.end_date = S.start_date+datetime.timedelta(days=duration)
+        S.status = 'unpaid'
+        DBSession.add(S)
+
+        request.session.flash("Package Applied Successfully!")
+        return HTTPFound(location=request.route_url('main_page'))
+
+    total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user).count()
+    if(total_selected_package > 0):
+        selected_package = DBSession.query(Selected_package).filter_by(user_id=user)[-1]
+    else:
+        selected_package = None
+    packages = DBSession.query(Packages).all()
+    return{'selected_package': selected_package, 'packages': packages}
+
+
