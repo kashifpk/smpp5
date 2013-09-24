@@ -29,5 +29,6 @@
 
 
 <a href= ${request.route_url('main_page')}><h2>BACK TO MAIN PAGE<h2></a><p>
+<br /><br />
 </ body>
 </html>
