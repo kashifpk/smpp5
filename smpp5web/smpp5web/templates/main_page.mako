@@ -41,7 +41,7 @@ every thing is now just a click away. Please select from the options below.</ fo
 </div>
 
 <div><br />&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-<a href = ${request.route_url('home')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/notes.jpg')}"  alt="pyck" width="42" height="42"/></ a>
+<a href = ${request.route_url('packages')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/notes.jpg')}"  alt="pyck" width="42" height="42"/></ a>
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
