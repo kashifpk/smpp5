@@ -19,7 +19,7 @@ class Packages(Base):
     package_name = Column(Unicode(50), primary_key=True)
     rates = Column(Float)
     smses = Column(Integer)
-    duration = Column(Unicode(100))
+    duration = Column(Integer)
 
     def __init__(self, package_name=None, rates=None, smses=None, duration=None):
         package_name = self.package_name

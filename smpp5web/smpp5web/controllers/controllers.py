@@ -119,7 +119,7 @@ def packages(request):
         S.status = 'unpaid'
         DBSession.add(S)
 
-        request.session.flash("Package Applied Successfully!")
+        request.session.flash("Your package has been activated!")
         return HTTPFound(location=request.route_url('main_page'))
 
     total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user).count()
