@@ -1,0 +1,32 @@
+'''This background process, running on android is responsible for posting incoming sms to the pyck server, running on PC
+'''
+import time
+import android
+import urllib
+import urllib2
+import re
+
+A = android.Android()
+post_url = "http://192.168.1.4:6543/sms_in"
+
+while True:
+    try:
+        msgs = A.smsGetMessages(True)
+        msgs = msgs.result
+        processed_msgs = []
+
+        for msg in msgs:
+            post_args = dict(address=msg[u'address'], body=msg[u'body'])
+            post_data = urllib.urlencode(post_args)  # urlencode converts the dict to a string suitable for POST
+            response = urllib2.urlopen(post_url, post_data).read()
+            myre = re.compile("<h1>(.*)</h1>")   # extract the read sms inside this header tag
+            result = myre.findall(response)
+            print(result)
+            processed_msgs.append(msg[u'_id'])
+
+        if len(processed_msgs) > 0:
+            A.smsMarkMessageRead(processed_msgs, True)
+
+            time.sleep(5)
+    except Exception, e:
+        pass

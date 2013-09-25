@@ -2,7 +2,7 @@ from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.pdu.message_submission import *
 from smpp5.lib.constants import interface_version as IV
-from smpp5.lib.constants import NPI, TON, command_id, esm_class
+from smpp5.lib.constants import NPI, TON, command_ids, esm_class
 
 #------------SubmitSm Encoding And Decoding-----------------
 def test_25_sbmit_sm_encode():
@@ -61,7 +61,7 @@ def test_01_data_sm_encode():
     
     P=DataSm()
 
-    P.command_id = Integer(command_id.data_sm, 4)
+    P.command_id = Integer(command_ids.data_sm, 4)
     P.source_addr_ton = Integer(TON.INTERNATIONAL, 1)
     P.source_addr_npi = Integer(NPI.ISDN, 1)
     P.source_addr = CString("1616")

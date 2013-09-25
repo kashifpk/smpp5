@@ -173,7 +173,7 @@ def test_01_unbind_rsp_encode():
     "Test UnBindResp encoding"
     
     P = UnBindResp()
-    #P.command_id = Integer(command_id.unbind_resp, 4)
+    #P.command_id = Integer(command_ids.unbind_resp, 4)
     
     assert '00 00 00 10 80 00 00 06 00 00 00 00 00 00 00 01 ' == hex_convert(P.encode(), 150)
     

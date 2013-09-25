@@ -34,6 +34,12 @@ def main(global_config, **settings):
 
     config.add_route('home', '/')
     config.add_route('contact', '/contact')
+    config.add_route('sms_in', '/sms_in')
+    config.add_route('main_page', '/main_page')
+    config.add_route('sms_history', '/sms_history')
+    config.add_route('billing', '/billing')
+    config.add_route('graphs', '/graphs')
+    config.add_route('packages', '/packages')
 
     config.add_route('pyckauth_login', '/login')
     config.add_route('pyckauth_logout', '/logout')
