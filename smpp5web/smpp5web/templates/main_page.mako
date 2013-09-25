@@ -27,17 +27,17 @@
     every thing is now just a click away. Please select from the options below.</ font>
     <br /><br />
     <div style="font-family:verdana;border-radius:0px;solid #EE872A; background-color:#EE872A">
-    <font color="white" size="3">BILLING SERVICES:</ font>
+    <font color="white" size="2">BILLING SERVICES:</ font>
     </div>
     <div><br />&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
     <a href= ${request.route_url('billing')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/pencil.jpeg')}"  alt="pyck" width="42" height="42"/></ a>
     </ div><br /><br />
     <div style="font-family:verdana;position:absolute;left:10px;padding:5px;width:130px;border-radius:3px;border:5px solid #EE872A">
-    <font color="#EE872A" size="3">Transactions details</ font>
+    <font color="#EE872A" size="2">Transactions details</ font>
     </div>
     <br /><br /><br /><br /><br /><br /><br /><br />
     <div style="font-family:verdana;border-radius:0px;solid #EE872A; background-color:#EE872A">
-    <font color="white" size="3">PACKAGE SERVICES:</ font>
+    <font color="white" size="2">PACKAGE SERVICES:</ font>
     </div>
     
     <div><br />&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp

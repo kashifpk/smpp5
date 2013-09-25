@@ -2,7 +2,7 @@
    <html>
    <body>
    <h1><font color = "#EE872A">&nbsp&nbsp&nbspSms Bills</h1></ font>
-   <br /><br />
+   <br />
    <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#EE872A"></ div><br /><br />
    <table border=1px>
       <tr>
@@ -37,7 +37,8 @@
    &nbsp&nbsp&nbsp&nbsp
    TOTAL BILL&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp= Rs.${total_bill}/-<br />
    <p>
-   <br /><br /><br /><br /><br />
-   <a href= ${request.route_url('main_page')}><h2>BACK TO MAIN PAGE<h2></a><p>
+   <br /><br /><br />
+   &nbsp&nbsp<U><a href= ${request.route_url('main_page')}><font color="#EE872A""><h2>BACK TO MAIN PAGE<h2></font></a><p></U>
+   <br /><br /><br />
    </ body>
    </html>
