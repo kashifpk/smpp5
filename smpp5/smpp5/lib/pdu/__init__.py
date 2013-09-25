@@ -19,13 +19,17 @@ from smpp5.lib.pdu.message_submission import (
     DataSm,
     DataSmResp,
     SubmitMulti,
-    SubmitMultiResp,
+    SubmitMultiResp)
+from smpp5.lib.pdu.anciliary_submission import (
     QuerySm,
     QuerySmResp,
     CancelSm,
     CancelSmResp,
     ReplaceSm,
     ReplaceSmResp)
+from smpp5.lib.pdu.message_delivery import (
+    DeliverSm,
+    DeliverSmResp)
 
 # command_id to PDU Class mappings
 command_mappings = {
@@ -49,5 +53,9 @@ command_mappings = {
     command_ids.cancel_sm : CancelSm,
     command_ids.cancel_sm_resp : CancelSmResp,
     command_ids.replace_sm : ReplaceSm,
-    command_ids.replace_sm_resp : ReplaceSmResp
+    command_ids.replace_sm_resp : ReplaceSmResp,
+    command_ids.submit_multi : SubmitMulti,
+    command_ids.submit_multi_resp : SubmitMultiResp,
+    command_ids.deliver_sm : DeliverSm,
+    command_ids.deliver_sm_resp : DeliverSmResp
 }
