@@ -5,7 +5,7 @@
     <br />
     <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#EE872A"></ div><br /><br />
     % if selected_package is None:
-        No package has been selected yet 
+        &nbsp&nbsp&nbsp&nbsp&nbsp No package has been selected yet 
     % else:
         <table>
         <tr>
@@ -72,7 +72,7 @@
         </select>
         <input type="submit" value="Apply Package" /></ form>
         <br /><br /><br /><br />
-        <U><a href= ${request.route_url('main_page')} ><h2><font color = "#EE872A">&nbsp&nbspBACK TO MAIN PAGE</font><h2></a><p></U>
+        <U><a href= ${request.route_url('main_page')} >&nbsp;&nbsp;<h2><font color = "#EE872A">BACK TO MAIN PAGE</font><h2></a><p></U>
         <br /><br />
     </ body>
     </html>
