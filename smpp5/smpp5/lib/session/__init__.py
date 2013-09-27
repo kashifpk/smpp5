@@ -35,13 +35,15 @@ from smpp5.lib.pdu.message_submission import (
     DataSm,
     DataSmResp,
     SubmitMulti,
-    SubmitMultiResp,
+    SubmitMultiResp)
+from smpp5.lib.pdu.anciliary_submission import (
     QuerySm,
     QuerySmResp,
     CancelSm,
     CancelSmResp,
     ReplaceSm,
-    ReplaceSmResp,
+    ReplaceSmResp)
+from smpp5.lib.pdu.message_delivery import (
     DeliverSm,
     DeliverSmResp)
 
