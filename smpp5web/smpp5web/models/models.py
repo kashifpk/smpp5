@@ -1,4 +1,3 @@
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -98,15 +97,4 @@ class Selected_package(Base):
         end_date = self.end_date
         status = self.status
 
-
-class Rates(Base):
-    __tablename__ = 'rates'
-
-    id = Column(Integer, primary_key=True)
-    network_type = Column(Unicode(50))
-    rates = Column(Float)
-
-    def __init__(self, network_type=None, rates=None):
-        network_type = self.network_type
-        rates = self.rates
 
