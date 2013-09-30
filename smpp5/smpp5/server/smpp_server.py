@@ -134,22 +134,6 @@ class SMPPServer(object):
         sms = DBSession.query(Sms)[-1]
         return(sms.id)
 
-    def set_rates(user, t_user, S, recipient):
-        if(user):
-                if('0'+recipient[3:6] == '0'+user.cell_number[3:6]):
-                    sms_rates = DBSession.query(Rates).filter_by(network_type='same').first()
-                    S.rates = sms_rates.rates
-                else:
-                    sms_rates = DBSession.query(Rates).filter_by(network_type='different').first()
-                    S.rates = sms_rates.rates
-        else:
-                if('0'+recipient[3:6] == t_user.prefix):
-                    sms_rates = DBSession.query(Rates).filter_by(network_type='same').first()
-                    S.rates = sms_rates.rates
-                else:
-                    sms_rates = DBSession.query(Rates).filter_by(network_type='different').first()
-                    S.rates = sms_rates.rates
-
     def query_result(message_id):
         message_id = int(message_id.decode(encoding='ascii'))
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
