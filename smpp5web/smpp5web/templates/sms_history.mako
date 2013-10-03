@@ -34,12 +34,12 @@
 {
 	background: #e8edff;
 }
-#history #history-2, #history #history-4, #history #history-6
+#history #history-2, #history #history-4, #history #history-6, #history #history-8
 {
 	background: #d0dafd;
 	border-bottom: 1px solid #c8d4fd;
 }
-#history #history-1, #history #history-3, #history #history-5, #history #history-7
+#history #history-1, #history #history-3, #history #history-5, #history #history-7, #history #history-9
 {
 	background: #dce4ff;
 	border-bottom: 1px solid #d6dfff;
@@ -61,6 +61,8 @@ p {color:#369;}
         <col class="history-odd" />
         <col class="history-even" />
         <col class="history-odd" />
+        <col class="history-even" />
+        <col class="history-odd" />
     </colgroup>
     <thead>
     	<tr>
@@ -69,8 +71,10 @@ p {color:#369;}
             <th scope="col" id="history-3">SMS TO</th>
             <th scope="col" id="history-4">SMS FROM</th>
             <th scope="col" id="history-5">SMS TYPE</th>
-            <th scope="col" id="history-6">DATE</th>
-            <th scope="col" id="history-7">RATES</th>
+            <th scope="col" id="history-6">SMS STATUS</th>
+            <th scope="col" id="history-7">SCHEDULED DATE</th>
+            <th scope="col" id="history-8">DELIVERED DATE</th>
+            <th scope="col" id="history-9">RATES</th>
         </tr>
     </thead>
    <tbody>
@@ -81,6 +85,8 @@ p {color:#369;}
        <td>${s.sms_to}</td>
        <td>${s.sms_from}</td>
        <td>${s.sms_type}</td>
+       <td>${s.status}</td>
+       <td>${s.schedule_delivery_time}</td>
        <td>${s.timestamp}</td>
        <td>${s.rates}</td>
      </tr>
