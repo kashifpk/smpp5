@@ -14,8 +14,8 @@ from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status
 
 import db
 from db import DBSession
-from models import User, Sms, User_Number, Prefix_Match, Packages, Selected_package, Rates
-from smpp5.server.database_file import Database
+from models import User, Sms, User_Number, Prefix_Match, Packages, Selected_package
+
 
 
 from smpp5.lib.session import SMPPSession
@@ -102,7 +102,8 @@ class SMPPServer(object):
         total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
         if(total_selected_package > 0):
             selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id)[-1]
-            print(selected_package.smses)
+        else:
+            selected_package = None
         S = Sms()
         S.sms_type = 'outgoing'
         if(user is not None):
@@ -110,24 +111,25 @@ class SMPPServer(object):
         else:
                 S.sms_from = t_user.prefix
         S.sms_to = recipient
+        S.schedule_delivery_time = datetime.datetime.now()
+        S.validity_period = datetime.datetime.now()+datetime.timedelta(days=1)
         S.msg = message
-        S.timestamp = datetime.datetime.now()
+        S.timestamp = None
         S.status = 'scheduled'
         S.msg_type = 'text'
         S.user_id = user_id
         if(selected_package is None):
             S.package_name = None
-            SMPPServer.set_rates(user, t_user, S, recipient)
+            S.rates = 1.5
         else:
             end_date = selected_package.end_date
             today_date = datetime.datetime.now()
-            if(end_date.day <= today_date.day or end_date.month < today_date.month):
-                if(int(selected_package.smses) > 0):
-                    S.package_name = selected_package.package_name
-                    S.rates = 0.0
-                    selected_package.smses = selected_package.smses-1
-                else:
-                    SMPPServer.set_rates(user, t_user, S, recipient)
+            if(end_date.day <= today_date.day or end_date.month < today_date.month and int(selected_package.smses) > 0):
+                S.package_name = selected_package.package_name
+                S.rates = 0.0
+                selected_package.smses = selected_package.smses-1
+            else:
+                S.rates = 1.5
 
         DBSession.add(S)
         transaction.commit()
@@ -139,17 +141,21 @@ class SMPPServer(object):
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
     # if 22 returns then no such message_id exist
         if(smses is None):
-            return(command_status.ESME_RQUERYFAIL)
-        elif(smses.status == 'scheduled'):
-            return(message_state.SCHEDULED)
+            return(command_status.ESME_RINVMSGID)
+        elif(smses.status == 'scheduled' and smses.validity_period <= datetime.datetime.now()):
+            return(dict(state=message_state.SCHEDULED, final_date=smses.validity_period))
+        elif(smses.status == 'scheduled' and smses.validity_period > datetime.datetime.now()):
+            return(dict(state=message_state.EXPIRED, final_date=smses.validity_period))
         elif(smses.status == 'delivered'):
-            return(message_state.DELIVERED)
+            return(dict(state=message_state.DELIVERED, final_date=smses.validity_period))
 
     def cancel_result(message_id):
         message_id = int(message_id.decode(encoding='ascii'))
-        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='scheduled').first()
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
         if(smses is None):
             return False
+        elif(smses.status == 'delivered'):
+            return command_status.ESME_RCANCELFAIL
         else:
             DBSession.delete(smses)
             transaction.commit()
@@ -158,10 +164,14 @@ class SMPPServer(object):
     def replace_result(message_id, message):
         message_id = int(message_id.decode(encoding='ascii'))
         message = message.decode(encoding='ascii')
-        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, status='scheduled').first()
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id).first()
         if(smses is None):
             return False
-        else:
+        elif(smses.status == 'delievered'):
+            return(command_status.ESME_RREPLACEFAIL)
+        elif(smses.status == 'scheduled'):
+            smses.schedule_delivery_time = datetime.datetime.now()
+            smses. validity_period = datetime.datetime.now()+datetime.timedelta(days=1)
             smses.msg = message
             transaction.commit()
             return True
