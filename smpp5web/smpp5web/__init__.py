@@ -40,6 +40,7 @@ def main(global_config, **settings):
     config.add_route('billing', '/billing')
     config.add_route('graphs', '/graphs')
     config.add_route('packages', '/packages')
+    config.add_route('select_packages', '/select_packages')
 
     config.add_route('pyckauth_login', '/login')
     config.add_route('pyckauth_logout', '/logout')
