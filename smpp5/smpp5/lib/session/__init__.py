@@ -8,6 +8,7 @@ server create an instance of SMPPSession to communicate with each other.
 """
 import sys
 import socket
+import datetime
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.constants import *
@@ -88,6 +89,7 @@ class SMPPSession(object):
         self.socket = socket
         self.state = SessionState.OPEN
         self._seq_num = 0
+        self._msg_id = 0
         self.responses = {}
         self.unread_smses = []
         self.server_validate_method = ''
@@ -107,6 +109,10 @@ class SMPPSession(object):
     def _next_seq_num(self):
         self._seq_num += 1
         return self._seq_num
+    
+    def _next_msg_id(self):
+        self._msg_id += 1
+        return  self._msg_id
 
     def get_pdu_from_socket(self):
         """
@@ -252,10 +258,15 @@ class SMPPSession(object):
         if not self._can_do('submit_sm'):
             raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes")
 
+        msg_length = int(len(message))
         P = SubmitSm()
         P.sequence_number = Integer(self._next_seq_num(), 4)
         P.source_addr = CString(str(self.user_id))
         P.destination_addr = CString(recipient)
+        P.schedule_delivery_time = CString("")
+        P.validity_period = CString("")
+        P.sm_default_msg_id = Integer(0, 1)        # page 134
+        P.sm_length = Integer(msg_length, 1)                # page 134
         P.short_message = CString(str(message))
         data = P.encode()
         #storing pdu in dictionary named responses
@@ -268,16 +279,23 @@ class SMPPSession(object):
         for successfull submission
         """
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
-            db_storage = self.server_db_store(P.destination_addr.value, P.short_message.value, self.user_id)
-            # in db_storage the message id of sms is returned
             R = SubmitSmResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
-            R.message_id = CString(str(db_storage))
+            if(P.sm_length.value > 255):
+                R.command_status = Integer(command_status.ESME_RINVMSGLEN, 4)
+            else:
+                db_storage = self.server_db_store(P.destination_addr.value, P.short_message.value, self.user_id)
+            # in db_storage the message id of sms is returned
+                R.message_id = CString(str(db_storage))
             data = R.encode()
             self.socket.sendall(data)
 
     def send_sms_response(self, P):
-        message_id = P.message_id.value
+        if(P.command_status.value == 0):
+            message_id = P.message_id.value
+            print("Message having message id " + str(message_id) + "has been sent successfully")
+        elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
+            print("Sorry message cannot be send due to invalid message length")
 
     def query_status(self, message_id):
         """
@@ -297,17 +315,29 @@ class SMPPSession(object):
         """
         This message is responsible for handling querying request and returning status of message
         """
-        query_result = self.server_query_result(P.message_id.value)
         R = QuerySmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
-        R.message_id = CString(P.message_id.value)
-        R.final_date = CString("")
-        R.message_state = Integer(query_result, 1)
-        data = R.encode()
+        query_result = self.server_query_result(P.message_id.value)
+        if(query_result == command_status.ESME_RINVMSGID):
+            R.command_status = Integer(command_status.ESME_RINVMSGID, 4)
+        else:
+            R.message_id = CString(P.message_id.value)
+            R.final_date = CString(str(query_result['final_date']))
+            R.message_state = Integer(query_result['state'], 1)
+            data = R.encode()
         self.socket.sendall(data)
 
     def query_sms_response(self, P):
-        message_state = P.message_state.value
+        if(P.command_status == 0):
+            message_state = P.message_state.value
+            if(message_state == message_state.SCHEDULED):
+                print("Message is secheduled and ready to delievered")
+            elif(message_state.value == message_state.DELIVERED):
+                print("Message has been delievered to destination")
+            elif(message_state.value == message_state.EXPIRED):
+                print("Sorry, message validity period has been expired")
+        elif(P.command_status.value == command_status.ESME_RINVMSGID):
+            print("Message cannot be quered because provided message id is invalid")
 
     def cancel_sms(self, message_id):
         """
@@ -319,6 +349,8 @@ class SMPPSession(object):
         P = CancelSm()
         P.sequence_number = Integer(self._next_seq_num(), 4)
         P.message_id = CString(str(message_id))
+        source_addr = CString(str(self.user_id))
+        destination_addr = CString("")
         self.responses.update({P.sequence_number.value: P})
         self.socket.sendall(P.encode())
 
@@ -330,12 +362,19 @@ class SMPPSession(object):
         R = CancelSmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
         if(cancel_result is False):
+            R.command_status = Integer(command_status.ESME_RINVMSGID, 4)
+        elif(cancel_result is command_status.ESME_RCANCELFAIL):
             R.command_status = Integer(command_status.ESME_RCANCELFAIL, 4)
         data = R.encode()
         self.socket.sendall(data)
 
     def cancel_sms_response(self, P):
-        command_state = P.command_status.value
+        if(P.command_status.value == 0):
+            print("Message has been cancelled successfully...")
+        elif(P.command_status.value == command_status.ESME_RINVMSGID):
+            print("Message cannot be cancelled because provided message id is invalid")
+        elif(P.command_status.value == command_status.ESME_RCANCELFAIL):
+            print("Message cannot be cancelled because message has been already delievered")
 
     def replace_sms(self, message_id, message):
         """
@@ -347,6 +386,11 @@ class SMPPSession(object):
         P = ReplaceSm()
         P.message_id = CString(str(message_id))
         P.sequence_number = Integer(self._next_seq_num(), 4)
+        source_addr = CString(str(self.user_id))
+        schedule_delivery_time = CString("")
+        validity_period = CString("")
+        sm_default_msg_id = Integer(0, 1)
+        sm_length = Integer(len(message), 1)
         P.short_message = CString(message)
         self.responses.update({P.sequence_number.value: P})
         self.socket.sendall(P.encode())
@@ -356,16 +400,26 @@ class SMPPSession(object):
         This method is responsible for handling replacing request and replace short message if it is not
         yet delivered.
         """
-        replace_sms = self.server_replace_result(P.message_id.value, P.short_message.value)
         R = ReplaceSmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
-        if(replace_sms is False):
-            R.command_status = Integer(command_status.ESME_RREPLACEFAIL, 4)
+        if(P.sm_length.value >= 255):
+            R.command_status = Integer(command_status.ESME_RINVMSGLEN, 4)
+        else:
+            replace_sms = self.server_replace_result(P.message_id.value, P.short_message.value)
+            if(replace_sms is False):
+                R.command_status = Integer(command_status.ESME_RINVMSGID, 4)
+            elif(replace_sms is command_status.ESME_RREPLACEFAIL):
+                R.command_status = Integer(command_status.ESME_RREPLACEFAIL, 4)
         data = R.encode()
         self.socket.sendall(data)
 
     def replace_sms_response(self, P):
-        command_state = P.command_status.value
+        if(P.command_status.value == 0):
+            print("Message has been replaced successfully...")
+        elif(P.command_status.value == command_status.ESME_RINVMSGID):
+            print("Message cannot be replaced because provided message id is invalid")
+        elif(P.command_status.value == command_status.ESME_RREPLACEFAIL):
+            print("Message cannot be replaced because message has been already delievered")
 
     def handle_unbind(self, P):
         """
