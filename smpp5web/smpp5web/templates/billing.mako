@@ -50,7 +50,7 @@ p {color:#369;}
    <body>
    <h1><font color = "#039">&nbsp&nbsp&nbspSms Bills</h1></ font>
    <br />
-   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#039"></ div><br /><br />
+   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
    
    <table id="billing">
     <colgroup>
@@ -82,7 +82,7 @@ p {color:#369;}
    % endfor
    </table>
    <br /><br /><br />
-   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#039"></ div><br /><br />
+   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
    <table id="billing">
     <colgroup>
     	<col class="billing-odd" />
@@ -100,6 +100,7 @@ p {color:#369;}
             <th scope="col" id="billing-2">TOTAL SMS RATES</th>
             <td>Rs.${smses_rates}/-</td>
          </tr>
+         <tr>
             <th scope="col" id="billing-3">TOTAL BILL</th>
             <td>Rs.${total_bill}/-</td>
         </tr>
