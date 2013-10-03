@@ -34,6 +34,8 @@ class Sms(Base):
     sms_type = Column(Unicode(40))
     sms_from = Column(Unicode(40))
     sms_to = Column(Unicode(40))
+    schedule_delivery_time = Column(DateTime)
+    validity_period = Column(DateTime)
     msg = Column(Unicode(100))
     timestamp = Column(DateTime)
     status = Column(Unicode(40))
@@ -41,11 +43,13 @@ class Sms(Base):
     package_name = Column(Unicode(50), ForeignKey(Packages.package_name))
     rates = Column(Float)
 
-    def __init__(self, sms_type=None, sms_from=None, sms_to=None, msg=None, timestamp=None, status=None,
-                 user_id=None, package_name=None, rates=None):
+    def __init__(self, sms_type=None, sms_from=None, sms_to=None, schedule_delivery_time=None, validity_period=None,
+                 msg=None, timestamp=None, status=None, user_id=None, package_name=None, rates=None):
         self.sms_type = sms_type
         self.sms_from = sms_from
         self.sms_to = sms_to
+        self.schedule_delivery_time = schedule_delivery_time
+        self.validity_period = validity_period
         self.msg = msg
         self.timestamp = timestamp
         self.status = status
