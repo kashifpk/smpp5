@@ -3,7 +3,7 @@ from pyramid.httpexceptions import HTTPFound
 import datetime
 
 from ..models import (
-    DBSession, Sms, User_Number, Prefix_Match, Packages, Selected_package, Rates)
+    DBSession, Sms, User_Number, Prefix_Match, Packages, Selected_package)
 
 from ..auth import (User)
 
@@ -105,6 +105,23 @@ def graph(request):
 @view_config(route_name='packages', renderer='packages.mako')
 def packages(request):
     user = request.session['logged_in_user']
+    total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user).count()
+    if(total_selected_package > 0):
+        selected_package = DBSession.query(Selected_package).filter_by(user_id=user)[-1]
+        end_date = selected_package.end_date.strftime('%d')
+        end_month = selected_package.end_date.strftime('%m')
+    else:
+        selected_package = None
+    date = datetime.datetime.now()
+    today_date = date.strftime('%d')
+    today_month = date.strftime('%m')
+    return{'selected_package': selected_package, 'today_date': today_date, 'today_month': today_month,
+           'end_date': end_date, 'end_month': end_month}
+
+
+@view_config(route_name='select_packages', renderer='select_packages.mako')
+def select_packages(request):
+    user = request.session['logged_in_user']
     if "POST" == request.method:
         package_name = request.POST['package_name']
         package = DBSession.query(Packages).filter_by(package_name=package_name).first()
@@ -122,12 +139,7 @@ def packages(request):
         request.session.flash("Your package has been activated!")
         return HTTPFound(location=request.route_url('main_page'))
 
-    total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user).count()
-    if(total_selected_package > 0):
-        selected_package = DBSession.query(Selected_package).filter_by(user_id=user)[-1]
-    else:
-        selected_package = None
     packages = DBSession.query(Packages).all()
-    return{'selected_package': selected_package, 'packages': packages}
+    return{'packages': packages}
 
 
