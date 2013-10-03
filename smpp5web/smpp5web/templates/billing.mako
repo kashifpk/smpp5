@@ -65,7 +65,7 @@ p {color:#369;}
             <th scope="col" id="billing-1">USER NUMBER</th>
             <th scope="col" id="billing-2">MESSAGE</th>
             <th scope="col" id="billing-3">SMS TO</th>
-            <th scope="col" id="billing-4">DATE</th>
+            <th scope="col" id="billing-4">DELIVERY DATE</th>
             <th scope="col" id="billing-5">RATES</th>
         </tr>
     </thead>
