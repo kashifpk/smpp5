@@ -44,6 +44,9 @@ def say(request):
         S.sms_type = 'incoming'
         S.sms_from = sms_from
         S.sms_to = sms_to
+        S.status = 'recieved'
+        S.schedule_delivery_time = None
+        S.validity_period = None
         S.msg = message
         user_number = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()
         # if number in sms_to is not present in user_number table then find number in telecom table
@@ -73,7 +76,7 @@ def mainpage(request):
 @view_config(route_name='sms_history', renderer='sms_history.mako')
 def sms_history(request):
     user = request.session['logged_in_user']
-    smses = DBSession.query(Sms).filter_by(user_id=user).all()
+    smses = DBSession.query(Sms).filter_by(user_id=user).filter(Sms.status in ['scheduled', 'recieved']).all()
     return{'smses': smses}
 
 
@@ -86,7 +89,7 @@ def billing(request):
     if(selected_packages):
         for p in selected_packages:
             package_rates = package_rates+p.rates
-    smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing').all()
+    smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing', status='delivered').all()
     if(smses):
         for s in smses:
             smses_rates = smses_rates+s.rates
