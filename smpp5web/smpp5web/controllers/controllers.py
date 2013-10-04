@@ -101,10 +101,12 @@ def billing(request):
 
 @view_config(route_name='graphs', renderer='graphs.mako')
 def graph(request):
-    user = request.session['logged_in_user']
+    #user = request.session['logged_in_user']
     sms = []
     date = []
     smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing').all()
+    
+    #print(smses)
     for row in range(len(smses)):
         for col in range(len(smses[row])):
             if col == 1:
@@ -112,6 +114,9 @@ def graph(request):
             else:
                 date.append(int(smses[row][col].strftime('%d')))
 
+    
+    sms = [5, 10, 15, 8, 3]
+    date = ['2013-10-01', '2013-10-02', '2013-10-03', '2013-10-04', '2013-10-05']
     return{'sms': sms, 'date': date}
 
 
