@@ -125,6 +125,8 @@ def packages(request):
         end_month = selected_package.end_date.strftime('%m')
     else:
         selected_package = None
+        end_date = None
+        end_month = None
     date = datetime.datetime.now()
     today_date = date.strftime('%d')
     today_month = date.strftime('%m')
