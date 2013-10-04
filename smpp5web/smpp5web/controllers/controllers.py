@@ -9,6 +9,7 @@ from ..auth import (User)
 
 
 from ..forms import ContactForm
+from sqlalchemy import func
 
 
 @view_config(route_name='home', renderer='home.mako')
@@ -101,8 +102,17 @@ def billing(request):
 @view_config(route_name='graphs', renderer='graphs.mako')
 def graph(request):
     user = request.session['logged_in_user']
-    smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing').all()
-    return{'smses': smses}
+    sms = []
+    date = []
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing').all()
+    for row in range(len(smses)):
+        for col in range(len(smses[row])):
+            if col == 1:
+                sms.append(smses[row][col])
+            else:
+                date.append(int(smses[row][col].strftime('%d')))
+
+    return{'sms': sms, 'date': date}
 
 
 @view_config(route_name='packages', renderer='packages.mako')
