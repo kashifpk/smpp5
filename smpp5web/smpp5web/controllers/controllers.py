@@ -77,7 +77,7 @@ def mainpage(request):
 @view_config(route_name='sms_history', renderer='sms_history.mako')
 def sms_history(request):
     user = request.session['logged_in_user']
-    smses = DBSession.query(Sms).filter_by(user_id=user).filter(Sms.status in ['scheduled', 'recieved']).all()
+    smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
     return{'smses': smses}
 
 
@@ -101,22 +101,17 @@ def billing(request):
 
 @view_config(route_name='graphs', renderer='graphs.mako')
 def graph(request):
-    #user = request.session['logged_in_user']
+    user = request.session['logged_in_user']
     sms = []
     date = []
-    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing').all()
-    
-    #print(smses)
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user, sms_type='outgoing').all()
     for row in range(len(smses)):
         for col in range(len(smses[row])):
             if col == 1:
                 sms.append(smses[row][col])
             else:
-                date.append(int(smses[row][col].strftime('%d')))
+                date.append(smses[row][col].strftime("%Y-%m-%d"))
 
-    
-    sms = [5, 10, 15, 8, 3]
-    date = ['2013-10-01', '2013-10-02', '2013-10-03', '2013-10-04', '2013-10-05']
     return{'sms': sms, 'date': date}
 
 
