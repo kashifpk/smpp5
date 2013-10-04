@@ -111,10 +111,10 @@ class SMPPServer(object):
         else:
                 S.sms_from = t_user.prefix
         S.sms_to = recipient
-        S.schedule_delivery_time = datetime.datetime.now()
-        S.validity_period = datetime.datetime.now()+datetime.timedelta(days=1)
+        S.schedule_delivery_time = datetime.date.today()
+        S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
         S.msg = message
-        S.timestamp = None
+        S.timestamp = datetime.date.today()
         S.status = 'scheduled'
         S.msg_type = 'text'
         S.user_id = user_id
@@ -122,9 +122,12 @@ class SMPPServer(object):
             S.package_name = None
             S.rates = 1.5
         else:
-            end_date = selected_package.end_date
-            today_date = datetime.datetime.now()
-            if(end_date.day <= today_date.day or end_date.month < today_date.month and int(selected_package.smses) > 0):
+            end_date = selected_package.end_date.strftime('%d')
+            end_month = selected_package.end_date.strftime('%m')
+            date = datetime.datetime.now()
+            today_date = date.strftime('%d')
+            today_month = date.strftime('%m')
+            if(end_date >= today_date or end_month > today_month and int(selected_package.smses) > 0):
                 S.package_name = selected_package.package_name
                 S.rates = 0.0
                 selected_package.smses = selected_package.smses-1
