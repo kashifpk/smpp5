@@ -92,7 +92,13 @@ p {color:#369;}
      </tr>
      </tbody>
    % endfor
-   </table>
+   </table><br /><br />
+   <h1><font color = "#039">&nbsp&nbsp&nbspSms Traffic Graphs</h1></ font>
+   <br />
+   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
+    <a href= ${request.route_url('dailygraphs')}><p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbspDaily Sms Traffic</p></a>
+    <a href= ${request.route_url('weeklygraphs')}><p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWeekly Sms Traffic</p></a>
+    <a href= ${request.route_url('monthlygraphs')}><p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbspMonthly Sms Traffic</p></a>
   <br />
  <br />
  <a href= ${request.route_url('main_page')}><p><center>BACK TO MAIN PAGE</center></p></a>
