@@ -38,7 +38,9 @@ def main(global_config, **settings):
     config.add_route('main_page', '/main_page')
     config.add_route('sms_history', '/sms_history')
     config.add_route('billing', '/billing')
-    config.add_route('graphs', '/graphs')
+    config.add_route('weeklygraphs', '/weeklygraphs')
+    config.add_route('dailygraphs', '/dailygraphs')
+    config.add_route('monthlygraphs', '/monthlygraphs')
     config.add_route('packages', '/packages')
     config.add_route('select_packages', '/select_packages')
 
