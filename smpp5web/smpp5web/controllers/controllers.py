@@ -99,12 +99,16 @@ def billing(request):
     return{'smses': smses, 'package_rates': package_rates, 'smses_rates': smses_rates, 'total_bill': total_bill}
 
 
-@view_config(route_name='graphs', renderer='graphs.mako')
-def graph(request):
+@view_config(route_name='weeklygraphs', renderer='graphs.mako')
+def weeklygraph(request):
     user = request.session['logged_in_user']
     sms = []
     date = []
-    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user, sms_type='outgoing').all()
+    todaydate = datetime.date.today()
+    previousdate = todaydate-datetime.timedelta(days=7)
+    smses = DBSession.query(Sms.timestamp,
+                            func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA',
+                                                                                        sms_type='outgoing', status='delivered').filter(Sms.timestamp >= previousdate).all()
     for row in range(len(smses)):
         for col in range(len(smses[row])):
             if col == 1:
@@ -112,7 +116,42 @@ def graph(request):
             else:
                 date.append(smses[row][col].strftime("%Y-%m-%d"))
 
-    return{'sms': sms, 'date': date}
+    return{'sms': sms, 'date': date, 'name': 'Week', 'traffic': 'Weekly'}
+
+
+@view_config(route_name='monthlygraphs', renderer='graphs.mako')
+def monthlygraph(request):
+    user = request.session['logged_in_user']
+    sms = []
+    date = []
+    todaydate = datetime.date.today()
+    currentmonth = todaydate.month
+    month_name = todaydate.strftime('%B')
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
+    for row in range(len(smses)):
+        for col in range(len(smses[row])):
+            if col == 1:
+                sms.append(smses[row][col])
+            else:
+                date.append(smses[row][col].strftime("%Y-%m-%d"))
+
+    return{'sms': sms, 'date': date, 'name': month_name, 'traffic': 'Monthly'}
+
+
+@view_config(route_name='dailygraphs', renderer='graphs.mako')
+def dailygraph(request):
+    user = request.session['logged_in_user']
+    sms = []
+    date = []
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing', status='delivered').all()
+    for row in range(len(smses)):
+        for col in range(len(smses[row])):
+            if col == 1:
+                sms.append(smses[row][col])
+            else:
+                date.append(smses[row][col].strftime("%Y-%m-%d"))
+
+    return{'sms': sms, 'date': date, 'name': '', 'traffic': 'Daily'}
 
 
 @view_config(route_name='packages', renderer='packages.mako')
