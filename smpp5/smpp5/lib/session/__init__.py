@@ -155,6 +155,11 @@ class SMPPSession(object):
             self.process_replace_sms(P)
         elif(command_ids.enquire_link == P.command_id.value):
             self.enquire_link_response(P)
+        else:
+            R = GenericNack()
+            R.sequence_number = Integer(P.sequence_number.value, 4)
+            R.command_status = Integer(command_status.ESME_RINVCMDID, 4)
+            self.socket.sendall(R.encode())
 
     def close(self):
         P = self.get_pdu_from_socket()
@@ -173,7 +178,10 @@ class SMPPSession(object):
             R = self.get_pdu_from_socket()
             if(R):
                 if(responses[R.sequence_number]):
-                    if(command_ids.submit_sm_resp == R.command_id.value):
+                    if(command_ids.generic_nack == R.command_id.value):
+                        if(command_status.ESME_RINVCMDID == R.command_status.value):
+                            print("You have sent invalid PDU which is not recognized by SMSC ")
+                    elif(command_ids.submit_sm_resp == R.command_id.value):
                         self.send_sms_response(R)
                     elif(command_ids.query_sm_resp == R.command_id.value):
                         self.query_sms_response(R)
@@ -311,7 +319,7 @@ class SMPPSession(object):
         This method is responsible for handling the request sent by client and sending the response pdu to the client
         for successfull submission
         """
-        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
             R = SubmitSmResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
             if(P.sm_length.value > 255):
@@ -324,8 +332,12 @@ class SMPPSession(object):
                 db_storage = self.server_db_store(P.destination_addr.value, message, self.user_id)
             # in db_storage the message id of sms is returned
                 R.message_id = CString(str(db_storage))
-            data = R.encode()
-            self.socket.sendall(data)
+        else:
+            R = SubmitSmResp()
+            R.sequence_number = Integer(P.sequence_number.value, 4)
+            R.command_status = Integer(command_status.ESME_RINVBNDSTS, 4)
+        data = R.encode()
+        self.socket.sendall(data)
 
     def send_sms_response(self, P):
         if(P.command_status.value == 0):
@@ -333,6 +345,8 @@ class SMPPSession(object):
             print("Message having message id " + str(message_id) + "has been sent successfully")
         elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
             print("Sorry message cannot be send due to invalid message length")
+        elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
+            print("Sorry message cannot be send because Sending Sms is not allowed in this session state")
 
     def query_status(self, message_id):
         """
