@@ -10,13 +10,14 @@ import threading
 
 def ui_loop(client):
 
-    while True:
-        count = client.session.notifications_4_client()
-        if(count == 0):
+   while True:
+        print("\n********************** MAIN MENU **********************************")
+        print()
+        notification = client.session.notifications_4_client()
+        if(notification == 0):
             pass
         else:
             print("* You have pending notifications...Press 6 to view them....thank you....")
-        print("\n********************** MAIN MENU **********************************")
         print("\nPress 1 to send Short Text Message")
         print("Press 2 to query the status of previously submitted short Text Message")
         print("Press 3 to cancel a previously submitted Short Text Message")
