@@ -30,11 +30,11 @@ def ui_loop(client):
             message = input("Enter the Short Message to send      ")
             if not recipient.startswith('+'):
                 recipient = '+92' + recipient[1:]
-            msg_id = client.session.send_sms(recipient, message)
+            client.session.send_sms(recipient, message)
 
         elif(option == 2):
             message_id = input("Enter the Message Id of Message whom Status is required    ")
-            status = client.session.query_status(message_id)
+            client.session.query_status(message_id)
 
         elif(option == 3):
             message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
@@ -43,7 +43,7 @@ def ui_loop(client):
         elif(option == 4):
             message_id = input("Enter the Message Id of Message whom you want to replace    ")
             message = input("Enter the Short Message to replace previous sumbitted short message      ")
-            msg_id = client.session.replace_sms(message_id, message)
+            client.session.replace_sms(message_id, message)
 
         elif(option == 5):
             pass
@@ -62,7 +62,7 @@ def ui_loop(client):
             print("\nInvalid Option......")
 
     client.session.unbind()
-    client.socket.close()
+    client.session.close()
     print("Thank You.....Good Bye!!")
 
 
@@ -90,9 +90,9 @@ def get_connect_info():
         return ret
 
 
-def client_thread(session):
-    while True:
-        session.storing_recieved_pdus()
+def client_thread(client):
+    while client.sc.is_open is True:
+        client.session.storing_recieved_pdus()
 
 if __name__ == '__main__':
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     if client.connect():
         print("Connection established successfully\n")
-        background_thread = threading.Thread(target=client_thread, args=(client.session,))
+        background_thread = threading.Thread(target=client_thread, args=(client,))
         background_thread.start()
     else:
         print("Connection Refused...Try Again\n")
