@@ -97,7 +97,6 @@ class SMPPServer(object):
     def db_storage(recipient, message, user_id):
         recipient = recipient.decode(encoding='ascii')
         #message = message.decode(encoding='ascii')
-        print(message)
         user = DBSession.query(User_Number).filter_by(user_id=user_id).first()
         t_user = DBSession.query(Prefix_Match).filter_by(user_id=user_id).first()
         total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
@@ -128,7 +127,7 @@ class SMPPServer(object):
             date = datetime.datetime.now()
             today_date = date.strftime('%d')
             today_month = date.strftime('%m')
-            if(end_date >= today_date or end_month > today_month and int(selected_package.smses) > 0):
+            if(end_month > today_month or end_date >= today_date and int(selected_package.smses) > 0):
                 S.package_name = selected_package.package_name
                 S.rates = 0.0
                 selected_package.smses = selected_package.smses-1
@@ -146,9 +145,9 @@ class SMPPServer(object):
     # if 22 returns then no such message_id exist
         if(smses is None):
             return(command_status.ESME_RINVMSGID)
-        elif(smses.status == 'scheduled' and smses.validity_period <= datetime.datetime.now()):
+        elif(smses.status == 'scheduled' and smses.validity_period >= datetime.datetime.now()):
             return(dict(state=message_state.SCHEDULED, final_date=smses.validity_period))
-        elif(smses.status == 'scheduled' and smses.validity_period > datetime.datetime.now()):
+        elif(smses.status == 'scheduled' and smses.validity_period < datetime.datetime.now()):
             return(dict(state=message_state.EXPIRED, final_date=smses.validity_period))
         elif(smses.status == 'delivered'):
             return(dict(state=message_state.DELIVERED, final_date=smses.validity_period))
