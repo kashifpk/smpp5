@@ -3,6 +3,7 @@ SMPP CLIENT INTERFACE
 """
 
 import sys
+import time
 from smpp5.lib.session import SMPPSession
 from smpp5.client.smpp_client import SMPPClient
 import threading
@@ -10,7 +11,7 @@ import threading
 
 def ui_loop(client):
 
-   while True:
+    while True:
         print("\n********************** MAIN MENU **********************************")
         print()
         notification = client.session.notifications_4_client()
@@ -57,13 +58,15 @@ def ui_loop(client):
                 client.session.processing_recieved_pdus()
 
         elif(option == 7):
+            client.session.unbind()
+            time.sleep(1)
+            client.session.processing_recieved_pdus()
             break
 
         else:
             print("\nInvalid Option......")
-
-    client.session.unbind()
-    client.session.close()
+    if client.session.state == 5:
+        client.sc.close()
     print("Thank You.....Good Bye!!")
 
 
