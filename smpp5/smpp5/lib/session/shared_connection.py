@@ -32,7 +32,6 @@ class SharedConnection(object):
     def send(self, data):
         self._socket_lock.acquire()
         self.socket.sendall(data)
-        print("data sended g from client....")
         self._socket_lock.release()
 
     def recv(self, bufsize=4098):
