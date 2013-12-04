@@ -58,13 +58,13 @@ def ui_loop(client):
                 client.session.processing_recieved_pdus()
 
         elif(option == 7):
-            client.session.unbind()
-            time.sleep(1)
-            client.session.processing_recieved_pdus()
             break
 
         else:
             print("\nInvalid Option......")
+    client.session.unbind()
+    time.sleep(1)
+    client.session.processing_recieved_pdus()
     if client.session.state == 5:
         client.sc.close()
     print("Thank You.....Good Bye!!")
