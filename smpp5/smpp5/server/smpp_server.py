@@ -16,7 +16,7 @@ from smpp5.lib.session.shared_connection import SharedConnection
 import db
 from db import DBSession
 from models import User, Sms, User_Number, Prefix_Match, Packages, Selected_package
-from smpp5.lib.session import SMPPSession
+from smpp5.lib.session import SMPPSession, SessionState
 
 
 def handle_client_connection(conn, addr):
@@ -31,16 +31,22 @@ def handle_client_connection(conn, addr):
     server_session.server_query_result = SMPPServer.query_result
     server_session.server_cancel_result = SMPPServer.cancel_result
     server_session.server_replace_result = SMPPServer.replace_result
+    server_session.sever_fetch_sms = fetch_incoming_sms
     #SMPPServer.multithread(server_session)
     #server_session.server_fetch_incoming_smses = SMPPServer.fetch_incoming_sms
     background_thread = threading.Thread(target=handle_client_requests, args=(server_session, conn))
     background_thread.start()
 
-    while server_session.state != 5:
+    background_thread2 = threading.Thread(target=deliver_sms, args=(server_session, conn))
+    background_thread2.start()
+
+    while server_session.state != SessionState.UNBOUND:
         server_session.handle_pdu()
+
     conn.close()
     time.sleep(1)
     background_thread.join()
+    background_thread2.join()
 
 
 def handle_client_requests(server_session, conn):
@@ -48,13 +54,22 @@ def handle_client_requests(server_session, conn):
         server_session.close()
 
 
-def fetch_incoming_sms():
-        try:
-            sms = DBSession.query(Sms).filter_by(sms_type='incoming',).first()
-            return(sms)
-        except (KeyboardInterrupt, SystemExit):
-            print("Good bye!")
-            sys.exit()
+def deliver_sms(server_session, conn):
+    while conn.is_open is True:
+        if server_session.state in [SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            time.sleep(5)
+            server_session.deliver_sms()
+
+
+def fetch_incoming_sms(user_id):
+        sms = DBSession.query(Sms).filter_by(sms_type='incoming', user_id=user_id, status='received').first()
+        if(sms is not None):
+            sms.status = 'delivered'
+            DBSession.commit()
+            transaction.commit()
+            return(dict(msg=sms.msg, sms_from=sms.sms_from, sms_to=sms.sms_to, delivery_time=sms.schedule_delivery_time))
+        else:
+            return None
 
 
 class SMPPServer(object):
@@ -194,7 +209,7 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('127.0.0.1', 1337)
+    S.start_serving('127.0.0.9', 1337)
 
 
 # surah toba verses 128 and 129
