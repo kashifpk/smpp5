@@ -148,29 +148,34 @@ class SMPPSession(object):
         """
         Given a PDU P, calls appropriate methods to handle it.
         """
-        #temp_pdus = deepcopy(self.pdus)
-        for seq_no in self.pdus.keys():
-            if self.pdus[seq_no]['read'] == 'false' and self.pdus[seq_no]['resp'] == '':
-                P = self.pdus[seq_no]['req']
-                if(command_ids.bind_transmitter == P.command_id.value or command_ids.bind_receiver == P.command_id.value or
-                        command_ids.bind_transceiver == P.command_id.value):
-                    self.handle_bind(P)
-                elif command_ids.submit_sm == P.command_id.value:
-                    self.process_sms(P)
-                elif(command_ids.query_sm == P.command_id.value):
-                    self.process_query(P)
-                elif(command_ids.cancel_sm == P.command_id.value):
-                    self.process_sms_cancelling(P)
-                elif(command_ids.replace_sm == P.command_id.value):
-                    self.process_replace_sms(P)
-                elif(command_ids.enquire_link == P.command_id.value):
-                    self.enquire_link_response(P)
-                else:
-                    R = GenericNack()
-                    R.sequence_number = Integer(P.sequence_number.value, 4)
-                    R.command_status = Integer(command_status.ESME_RINVCMDID, 4)
-                    self.socket.send(R.encode())
-                self.pdus[seq_no]['read'] = 'true'
+        isempty = False
+        while isempty is False:
+            isempty = (self.pdus and True) or False
+        seq_no, pdu = self.pdus.popitem()
+        #for seq_no in self.pdus.keys():
+        if pdu['resp'] == '':
+            P = pdu['req']
+            if(command_ids.bind_transmitter == P.command_id.value or command_ids.bind_receiver == P.command_id.value or
+                    command_ids.bind_transceiver == P.command_id.value):
+                self.handle_bind(P)
+            elif command_ids.submit_sm == P.command_id.value:
+                self.process_sms(P)
+            elif(command_ids.query_sm == P.command_id.value):
+                self.process_query(P)
+            elif(command_ids.cancel_sm == P.command_id.value):
+                self.process_sms_cancelling(P)
+            elif(command_ids.replace_sm == P.command_id.value):
+                self.process_replace_sms(P)
+            elif(command_ids.enquire_link == P.command_id.value):
+                self.enquire_link_response(P)
+            elif(command_ids.unbind == P.command_id.value):
+                self.handle_unbind(P)
+            else:
+                R = GenericNack()
+                R.sequence_number = Integer(P.sequence_number.value, 4)
+                R.command_status = Integer(command_status.ESME_RINVCMDID, 4)
+                self.socket.send(R.encode())
+            #self.pdus[seq_no]['read'] = 'true'
                 #self.pdus[seq_no]['read'] = 'true'
 
     def close(self):
@@ -302,7 +307,6 @@ class SMPPSession(object):
                 R.sequence_number = Integer(P.sequence_number.value, 4)
                 R.system_id = CString(P.system_id.value)
                 data = R.encode()
-                self.pdus[P.sequence_number.value]['resp'] = R
                 self.socket.send(data)
             else:
                 self.validation_status = 'fail'
@@ -328,7 +332,6 @@ class SMPPSession(object):
         R = EnquireLinkResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
         data = R.encode()
-        self.pdus[P.sequence_number.value]['resp'] = R
         self.socket.send(data)
 
     def process_enquire_link_response(self, P):
@@ -389,7 +392,6 @@ class SMPPSession(object):
             R.sequence_number = Integer(P.sequence_number.value, 4)
             R.command_status = Integer(command_status.ESME_RINVBNDSTS, 4)
         data = R.encode()
-        self.pdus[P.sequence_number.value]['resp'] = R
         self.socket.send(data)
 
     def send_sms_response(self, P):
@@ -437,7 +439,6 @@ class SMPPSession(object):
             R.message_state = Integer(query_result['state'], 1)
             print(query_result['state'])
         data = R.encode()
-        self.pdus[P.sequence_number.value]['resp'] = R
         self.socket.send(data)
 
     def query_sms_response(self, P):
@@ -485,7 +486,6 @@ class SMPPSession(object):
         elif(cancel_result is command_status.ESME_RCANCELFAIL):
             R.command_status = Integer(command_status.ESME_RCANCELFAIL, 4)
         data = R.encode()
-        self.pdus[P.sequence_number.value]['resp'] = R
         self.socket.send(data)
 
     def cancel_sms_response(self, P):
@@ -537,7 +537,6 @@ class SMPPSession(object):
             elif(replace_sms is command_status.ESME_RREPLACEFAIL):
                 R.command_status = Integer(command_status.ESME_RREPLACEFAIL, 4)
         data = R.encode()
-        self.pdus[P.sequence_number.value]['resp'] = R
         self.socket.send(data)
 
     def replace_sms_response(self, P):
@@ -560,7 +559,6 @@ class SMPPSession(object):
             R = UnBindResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
             data = R.encode()
-            self.pdus[P.sequence_number.value]['resp'] = R
             self.socket.send(data)
 
 
