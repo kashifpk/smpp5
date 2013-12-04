@@ -18,7 +18,7 @@ def ui_loop(client):
         if(notification == 0):
             pass
         else:
-            print("* You have pending notifications...Press 6 to view them....thank you....")
+            print("* You have pending  notifications...Press 6 to view them....thank you....")
         print("\nPress 1 to send Short Text Message")
         print("Press 2 to query the status of previously submitted short Text Message")
         print("Press 3 to cancel a previously submitted Short Text Message")
@@ -48,14 +48,16 @@ def ui_loop(client):
             client.session.replace_sms(message_id, message)
 
         elif(option == 5):
-            pass
+            client.session.view_smses()
 
         elif(option == 6):
             count = client.session.notifications_4_client()
             if(count == 0):
                 print("You have no any pending notification...")
             else:
-                client.session.processing_recieved_pdus()
+                while count > 0:
+                    client.session.processing_recieved_pdus()
+                    count = count - 1
 
         elif(option == 7):
             break
@@ -64,9 +66,9 @@ def ui_loop(client):
             print("\nInvalid Option......")
     client.session.unbind()
     time.sleep(1)
-    client.session.processing_recieved_pdus()
-    if client.session.state == 5:
-        client.sc.close()
+    while client.session.state != 5:
+        client.session.processing_recieved_pdus()
+    client.sc.close()
     print("Thank You.....Good Bye!!")
 
 
@@ -117,6 +119,7 @@ if __name__ == '__main__':
         print("Login successful\n")
             #to check if ui_loop method is functioning correct
         ui_loop(client)
+        print("aa gya")
         background_thread.join()
     else:
         print("Login Failed")
