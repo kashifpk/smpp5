@@ -25,17 +25,36 @@ def handle_client_connection(conn, addr):
     """
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)
-    server_session.server_fetch_incoming_smses = SMPPServer.fetch_incoming_sms
-    server_session.handle_bind(SMPPServer.validate)  # passing validate function name to handle_bind method to let the session instance call it 
+    #server_session.server_fetch_incoming_smses = SMPPServer.fetch_incoming_sms
     server_session.server_db_store = SMPPServer.db_storage
+    server_session.server_validate_method = SMPPServer.validate
     server_session.server_query_result = SMPPServer.query_result
     server_session.server_cancel_result = SMPPServer.cancel_result
     server_session.server_replace_result = SMPPServer.replace_result
     #SMPPServer.multithread(server_session)
     #server_session.server_fetch_incoming_smses = SMPPServer.fetch_incoming_sms
-    server_session.close()
-    time.sleep(5)
+    background_thread = threading.Thread(target=handle_client_requests, args=(server_session, conn))
+    background_thread.start()
+
+    while server_session.state != 5:
+        server_session.handle_pdu()
     conn.close()
+    time.sleep(1)
+    background_thread.join()
+
+
+def handle_client_requests(server_session, conn):
+    while conn.is_open is True:
+        server_session.close()
+
+
+def fetch_incoming_sms():
+        try:
+            sms = DBSession.query(Sms).filter_by(sms_type='incoming',).first()
+            return(sms)
+        except (KeyboardInterrupt, SystemExit):
+            print("Good bye!")
+            sys.exit()
 
 
 class SMPPServer(object):
@@ -85,14 +104,6 @@ class SMPPServer(object):
         else:
             print("Validation failed")
             return 'false'
-
-    def fetch_incoming_sms():
-        try:
-            sms = DBSession.query(Sms).filter_by(sms_type='incoming').first()
-            return(sms)
-        except (KeyboardInterrupt, SystemExit):
-            print("Good bye!")
-            sys.exit()
 
     def db_storage(recipient, message, user_id):
         recipient = recipient.decode(encoding='ascii')
