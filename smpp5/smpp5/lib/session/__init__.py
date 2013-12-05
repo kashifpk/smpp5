@@ -189,44 +189,39 @@ class SMPPSession(object):
         """
         Client use this method to process pdus responses by calling appropriate method
         """
-        isempty = False
         isempty = (self.comp_pdus and True) or False
         if isempty is not False:
-            pass
-        else:
-            while(isempty is False):
-                isempty = (self.comp_pdus and True) or False
-        seq_no, pdu = self.comp_pdus.popitem()
-        if pdu['resp'] != '':
-            R = pdu['resp']
-            if(command_ids.generic_nack == R.command_id.value):
-                if(command_status.ESME_RINVCMDID == R.command_status.value):
-                    print("You have sent invalid PDU which is not recognized by SMSC ")
-            if(self.state == SessionState.OPEN):
-                if(command_ids.bind_transmitter_resp == R.command_id.value):
-                    self.binding_response_handling(R)
-                elif(command_ids.bind_receiver_resp == R.command_id.value):
-                    self.binding_response_handling(R)
-                elif(command_ids.bind_transceiver_resp == R.command_id.value):
-                    self.binding_response_handling(R)
-            else:
-                if(command_ids.submit_sm_resp == R.command_id.value):
-                    self.send_sms_response(R)
-                elif(command_ids.query_sm_resp == R.command_id.value):
-                    self.query_sms_response(R)
-                elif(command_ids.replace_sm_resp == R.command_id.value):
-                    self.replace_sms_response(R)
-                elif(command_ids.cancel_sm_resp == R.command_id.value):
-                    self.cancel_sms_response(R)
-                elif(command_ids.unbind_resp == R.command_id.value):
-                    self.state = SessionState.UNBOUND
-                elif(command_ids.cancel_sm_resp == R.command_id.value):
-                    self.cancel_sms_response(R)
-                elif(command_ids.enquire_link_resp == R.command_id.value):
-                    self.process_enquire_link_response(R)
-                elif(command_ids.unbind_resp == R.command_id.value):
-                    self.unbind_response(R)
-        pdu['read'] = 'true'
+            seq_no, pdu = self.comp_pdus.popitem()
+            if pdu['resp'] != '':
+                R = pdu['resp']
+                if(command_ids.generic_nack == R.command_id.value):
+                    if(command_status.ESME_RINVCMDID == R.command_status.value):
+                        print("You have sent invalid PDU which is not recognized by SMSC ")
+                if(self.state == SessionState.OPEN):
+                    if(command_ids.bind_transmitter_resp == R.command_id.value):
+                        self.binding_response_handling(R)
+                    elif(command_ids.bind_receiver_resp == R.command_id.value):
+                        self.binding_response_handling(R)
+                    elif(command_ids.bind_transceiver_resp == R.command_id.value):
+                        self.binding_response_handling(R)
+                else:
+                    if(command_ids.submit_sm_resp == R.command_id.value):
+                        self.send_sms_response(R)
+                    elif(command_ids.query_sm_resp == R.command_id.value):
+                        self.query_sms_response(R)
+                    elif(command_ids.replace_sm_resp == R.command_id.value):
+                        self.replace_sms_response(R)
+                    elif(command_ids.cancel_sm_resp == R.command_id.value):
+                        self.cancel_sms_response(R)
+                    elif(command_ids.unbind_resp == R.command_id.value):
+                        self.state = SessionState.UNBOUND
+                    elif(command_ids.cancel_sm_resp == R.command_id.value):
+                        self.cancel_sms_response(R)
+                    elif(command_ids.enquire_link_resp == R.command_id.value):
+                        self.process_enquire_link_response(R)
+                    elif(command_ids.unbind_resp == R.command_id.value):
+                        self.unbind_response(R)
+            pdu['read'] = 'true'
 
     def notifications_4_client(self):
         """
@@ -287,7 +282,6 @@ class SMPPSession(object):
                 R.sequence_number = Integer(P.sequence_number.value, 4)
                 R.command_status = Integer(command_status.ESME_RBINDFAIL, 4)
                 data = R.encode()
-                self.pdus[P.sequence_number.value]['resp'] = R
                 self.socket.send(data)
         print("    Credentials send by client are:   ")
         print(P.system_id.value)
