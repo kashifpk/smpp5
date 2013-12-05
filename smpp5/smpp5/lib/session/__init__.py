@@ -118,44 +118,34 @@ class SMPPSession(object):
             return False
 
     def _next_seq_num(self):
+        """
+        This method is responsible to return sequence number
+        """
+
         self._seq_num += 1
         return self._seq_num
 
-    #def get_pdu_from_socket(self):
-    #    """
-    #    Given a socket, returns a completed PDU and blocks until a PDU is received
-    #
-    #    For non-blocking sockets see:
-    #
-    #    * http://docs.python.org/2/howto/sockets.html#non-blocking-sockets
-    #    * http://stackoverflow.com/questions/2719017/how-to-set-timeout-on-pythons-socket-recv-method
-    #    * http://docs.python.org/2/library/select.html#select.select
-    #    """
-    #    #First wait till 4 bytes a read from the socket (command_length)
-    #    d = self.socket.recv(4, socket.MSG_WAITALL)
-    #    command_length = Integer.decode(d)  # decode first four bytes to get the command length via it
-    #
-    #    # get bytes specified by command_length - 4
-    #    sock_data = self.socket.recv(command_length.value - 4, socket.MSG_WAITALL)
-    #    sock_data = d + sock_data
-    #
-    #    command_id = Integer.decode(sock_data[4:8])    # decode from 5th byte till 8th to get command_id
-    #    PDUClass = command_mappings[command_id.value]  # get the class name via command_id
-    #
-    #    # decode PDU
-    #    P = PDUClass.decode(sock_data)
-    #
-    #    return P
+    def process_request(self):
+        """
+        Server background thread use this method to receive requests or response pdus send by client over socket
+        """
+
+        while self.socket.is_open is True:
+            P = self.socket.get_pdu_from_socket()
+            if P is not None:
+                if(P.command_id.value == command_ids.deliver_sm_resp):
+                    pass
+                else:
+                    self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
 
     def handle_pdu(self):
         """
-        Given a PDU P, calls appropriate methods to handle it.
+        This method check for client request and calls appropriate methods to handle it.
         """
-        isempty = False
+
         isempty = (self.pdus and True) or False
         if isempty is not False:
             seq_no, pdu = self.pdus.popitem()
-            #for seq_no in self.pdus.keys():
             if pdu['resp'] == '':
                 P = pdu['req']
                 if(command_ids.bind_transmitter == P.command_id.value):
@@ -176,25 +166,15 @@ class SMPPSession(object):
                     self.enquire_link_response(P)
                 elif(command_ids.unbind == P.command_id.value):
                     self.handle_unbind(P)
-                elif(command_ids.deliver_sm_resp == P.command_id.value):
-                    pass
                 else:
                     R = GenericNack()
                     R.sequence_number = Integer(P.sequence_number.value, 4)
                     R.command_status = Integer(command_status.ESME_RINVCMDID, 4)
                     self.socket.send(R.encode())
-                #self.pdus[seq_no]['read'] = 'true'
-                    #self.pdus[seq_no]['read'] = 'true'
-
-    def close(self):
-        while self.socket.is_open is True:
-            P = self.socket.get_pdu_from_socket()
-            if P is not None:
-                self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
 
     def storing_recieved_pdus(self):
         '''
-        Client background thread use this method to recieve response PDU's and storing them in dictionary.
+        Client background thread use this method to recieve response/request PDU's and storing them in dictionary.
         '''
         while self.socket.is_open is True:
             R = self.socket.get_pdu_from_socket()
@@ -202,7 +182,6 @@ class SMPPSession(object):
                 if R.command_id.value == command_ids.deliver_sm:
                     self.deliver_sms_response(R)
                 elif(self.pdus[R.sequence_number.value]):
-                    print("yyyyyyyyyyy")
                     self.comp_pdus[R.sequence_number.value] = self.pdus[R.sequence_number.value]
                     self.comp_pdus[R.sequence_number.value]['resp'] = R
 
@@ -259,21 +238,11 @@ class SMPPSession(object):
                 notification = notification+1
         return notification
 
-    def unbind(self):
-        """
-        This method is used by client to Unbind with the server....
-        """
-        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
-            P = UnBind()
-            P.sequence_number = Integer(self._next_seq_num(), 4)
-            self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
-            self.socket.send(P.encode())
-
     def bind(self, bind_type, system_id, password, system_type):
         """
         Used by the client to bind TX, RX or TRX with the server
         """
-        # try sending the appropriate bind type PDU ('RX', 'TX', 'TRX') and fetch return value
+
         bind_types = dict(
             TX=dict(request=BindTransmitter, response=BindTransmitterResp),
             RX=dict(request=BindReceiver, response=BindReceiverResp),
@@ -286,31 +255,13 @@ class SMPPSession(object):
         P.system_type = CString(system_type)
         data = P.encode()
         self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
-        print("data tou ho gya send")
         self.socket.send(data)
-        # recieving the response from server
-        #P = self.get_pdu_from_socket()
-
-    def binding_response_handling(self, R):
-        """
-        This method is reaponsible to process bind transmitter or receiver or transceiver responses send by server...
-        """
-        if(R.command_status.value == 0):
-            if(R.command_id.value == command_ids.bind_transmitter_resp):
-                self.state = SessionState.BOUND_TX
-            elif(R.command_id.value == command_ids.bind_receiver_resp):
-                self.state = SessionState.BOUND_RX
-            elif(R.command_id.value == command_ids.bind_transceiver_resp):
-                self.state = SessionState.BOUND_TRX
-
-    def unbind_response(self, R):
-        self.state = SessionState.UNBOUND
 
     def handle_bind(self, P):
         """
         Used by the server to handle the incoming bind request
         """
-        #recieving bind pdu from client
+
         print("Received PDU: " + P.__class__.__name__)
 
         pdu = dict(
@@ -343,12 +294,27 @@ class SMPPSession(object):
         print(P.password.value)
         print(P.system_type.value)
 
+    def binding_response_handling(self, R):
+        """
+        This method is reaponsible to process bind transmitter or receiver or transceiver responses send by server...
+        """
+        if(R.command_status.value == 0):
+            if(R.command_id.value == command_ids.bind_transmitter_resp):
+                self.state = SessionState.BOUND_TX
+            elif(R.command_id.value == command_ids.bind_receiver_resp):
+                self.state = SessionState.BOUND_RX
+            elif(R.command_id.value == command_ids.bind_transceiver_resp):
+                self.state = SessionState.BOUND_TRX
+
     def enquire_link(self):
-            P = EnquireLink()
-            P.sequence_number = Integer(self._next_seq_num(), 4)
-            data = P.encode()
-            self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
-            self.socket.send(data)
+        """
+        This method is used by client to ensure the connectivity with server.
+        """
+        P = EnquireLink()
+        P.sequence_number = Integer(self._next_seq_num(), 4)
+        data = P.encode()
+        self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
+        self.socket.send(data)
 
     def enquire_link_response(self, P):
         R = EnquireLinkResp()
@@ -379,7 +345,7 @@ class SMPPSession(object):
             P.validity_period = CString("")
             P.sm_default_msg_id = Integer(0, 1)
             if(msg_length < 255):
-                P.sm_length = Integer(msg_length, 1)                # page 134
+                P.sm_length = Integer(msg_length, 1)
                 P.short_message = CString(str(message))
             else:
                 P.message_payload = TLV(tlv_tag.message_payload, message)
@@ -413,7 +379,6 @@ class SMPPSession(object):
             R.sequence_number = Integer(P.sequence_number.value, 4)
             R.command_status = Integer(command_status.ESME_RINVBNDSTS, 4)
         data = R.encode()
-        print("msg send")
         self.socket.send(data)
 
     def send_sms_response(self, P):
@@ -422,9 +387,9 @@ class SMPPSession(object):
         """
         if(P.command_status.value == 0):
             message_id = P.message_id.value
-            print("Message having message id " + str(message_id) + "has been sent successfully")
+            print("Message having message id " + str(message_id) + " has been sent successfully")
         elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
-            print("Sorry message cannot be send due to invalid message length")
+            print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length")
         elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
             print("Sorry message cannot be send because Sending Sms is not allowed in this session state")
 
@@ -452,14 +417,13 @@ class SMPPSession(object):
         """
         R = QuerySmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
-        query_result = self.server_query_result(P.message_id.value)
+        query_result = self.server_query_result(P.message_id.value, self.user_id)
         if(query_result == command_status.ESME_RINVMSGID):
             R.command_status = Integer(command_status.ESME_RINVMSGID, 4)
         else:
             R.message_id = CString(P.message_id.value)
             R.final_date = CString(str(query_result['final_date']))
             R.message_state = Integer(query_result['state'], 1)
-            print(query_result['state'])
         data = R.encode()
         self.socket.send(data)
 
@@ -470,13 +434,13 @@ class SMPPSession(object):
         if(P.command_status.value == 0):
             msg_state = P.message_state.value
             if(msg_state == message_state.SCHEDULED):
-                print("Message is secheduled and ready to delievered")
+                print("Message having message id " + str(P.message_id.value) + " is secheduled and ready to deliever")
             elif(msg_state == message_state.DELIVERED):
-                print("Message has been delievered to destination")
+                print("Message having message id " + str(P.message_id.value) + " has been delievered to destination")
             elif(msg_state == message_state.EXPIRED):
-                print("Sorry, message validity period has been expired")
+                print("Sorry,message having message id " + str(P.message_id.value) + "validity period has been expired")
         elif(P.command_status.value == command_status.ESME_RINVMSGID):
-            print("Message cannot be quered because provided message id is invalid")
+            print("Message having message id " + str(P.message_id.value) + " cannot be quered because provided message id is invalid")
 
     def cancel_sms(self, message_id):
         """
@@ -500,7 +464,7 @@ class SMPPSession(object):
         """
         This method is responsible for handling cancel request and cancels the message if it is not yet delivered
         """
-        cancel_result = self.server_cancel_result(P.message_id.value)
+        cancel_result = self.server_cancel_result(P.message_id.value, self.user_id)
         R = CancelSmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
         if(cancel_result is False):
@@ -553,7 +517,7 @@ class SMPPSession(object):
         if(P.sm_length.value >= 255):
             R.command_status = Integer(command_status.ESME_RINVMSGLEN, 4)
         else:
-            replace_sms = self.server_replace_result(P.message_id.value, P.short_message.value)
+            replace_sms = self.server_replace_result(P.message_id.value, P.short_message.value, self.user_id)
             if(replace_sms is False):
                 R.command_status = Integer(command_status.ESME_RINVMSGID, 4)
             elif(replace_sms is command_status.ESME_RREPLACEFAIL):
@@ -572,49 +536,51 @@ class SMPPSession(object):
         elif(P.command_status.value == command_status.ESME_RREPLACEFAIL):
             print("Message cannot be replaced because message has been already delievered")
 
-    def handle_unbind(self, P):
-        """
-        Used by the server to handle the incoming unbind request
-        """
-        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
-            self.state = SessionState.UNBOUND
-            R = UnBindResp()
-            R.sequence_number = Integer(P.sequence_number.value, 4)
-            data = R.encode()
-            self.socket.send(data)
-
     def deliver_sms(self):
+        """
+        This method is used by server to deliver the smses if any to currently logged in client.
+        """
+
         try:
             if not self._can_do('deliver_sm'):
-                raise InvalidSessionState("SMPP Session not in a state that allows delivering SMSes")
+                raise InvalidSessionState("Sorry, Client terminates the connection")
         except InvalidSessionState as e:
             print(e.value)
         sms = self.sever_fetch_sms(self.user_id)
         if(sms is None):
             pass
         else:
-            msg_length = int(len(sms['msg']))
+            msg_length = int(len(sms.msg))
             P = DeliverSm()
-            P.source_addr = CString(str(sms['sms_from']))
-            P.destination_addr = CString(str(sms['sms_to']))
-            P.schedule_delivery_time = CString(str(sms['delivery_time']))
+            P.sequence_number = Integer(self._next_seq_num(), 4)
+            P.source_addr = CString(str(sms.sms_from))
+            P.destination_addr = CString(str(sms.sms_to))
+            P.schedule_delivery_time = CString(str(sms.schedule_delivery_time))
             P.validity_period = CString("")
             if(msg_length < 255):
                 P.sm_length = Integer(msg_length, 1)                # page 134
-                P.short_message = CString(str(sms['msg']))
+                P.short_message = CString(str(sms.msg))
             else:
                 P.message_payload = TLV(tlv_tag.message_payload, message)
             data = P.encode()
             self.socket.send(data)
 
     def deliver_sms_response(self, P):
+        """
+        This method is used by client to ensure the recieving of delivered message by sending response to server.
+        """
+
         R = DeliverSmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
         data = R.encode()
-        self.smses.update({P.sequence_number.value: {'pdu': P}})
+        self.smses.update({P.sequence_number.value: {'pdu': P, 'read': 'false'}})
         self.socket.send(data)
 
     def view_smses(self):
+        """
+        This method is used by client to view all unread smses delivered by server.
+        """
+
         if self.state in [SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             isempty = (self.smses and True) or False
             if isempty is False:
@@ -629,4 +595,34 @@ class SMPPSession(object):
                     isempty = (self.smses and True) or False
         else:
             print("SMPP Session not in a state that allows you to view SMSes")
+
+    def unbind(self):
+        """
+        This method is used by client to send Unbind request to server....
+        """
+
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            P = UnBind()
+            P.sequence_number = Integer(self._next_seq_num(), 4)
+            self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
+            self.socket.send(P.encode())
+
+    def handle_unbind(self, P):
+        """
+        Used by the server to handle the incoming unbind request and ensure unbinding.
+        """
+
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            self.state = SessionState.UNBOUND
+            R = UnBindResp()
+            R.sequence_number = Integer(P.sequence_number.value, 4)
+            data = R.encode()
+            self.socket.send(data)
+
+    def unbind_response(self, R):
+        """
+        This method is used by client to perform action based on response of unbind request.
+        """
+
+        self.state = SessionState.UNBOUND
 
