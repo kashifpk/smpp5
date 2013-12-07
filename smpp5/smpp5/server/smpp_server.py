@@ -15,8 +15,9 @@ from smpp5.lib.session.shared_connection import SharedConnection
 
 import db
 from db import DBSession
-from models import User, Sms, User_Number, Prefix_Match, Packages, Selected_package
+from models import User, Sms, User_Number, Prefix_Match, Packages, Selected_package, Network, Mnp
 from smpp5.lib.session import SMPPSession, SessionState
+from smpp5.client.smpp_client import SMPPClient
 
 
 def handle_client_connection(conn, addr):
@@ -43,12 +44,12 @@ def handle_client_connection(conn, addr):
     background_thread2 = threading.Thread(target=deliver_sms, args=(server_session, conn))
     background_thread2.start()
 
-    #current thread for receiving responses from client and storing them in dict
+    # current thread for receiving responses from client and storing them in dict
     while server_session.state != SessionState.UNBOUND:
         server_session.handle_pdu()
 
     conn.close()
-    time.sleep(1)
+    #time.sleep(1)
     background_thread.join()
     background_thread2.join()
 
@@ -83,7 +84,6 @@ def fetch_incoming_sms(user_id):
     sms = smses
     if smses:
         smses.status = 'delivered'
-        #transaction.commit()
     return(smses)
 
 
@@ -152,7 +152,35 @@ class SMPPServer(object):
 
         recipient = recipient.decode(encoding='ascii')  # recipient refers to destination address
         user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # user refers to normal user
-        t_user = DBSession.query(Prefix_Match).filter_by(user_id=user_id).first()  # t_user refers to telecom user
+        cell_number = user.cell_number
+        source_prefix = cell_number[0:6]
+        dest_prefix = recipient[0:6]
+        s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()  # t_user refers to network
+        source_network = s_network.network
+        d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()  # t_user refers to network
+        dest_network = d_network.network
+        if(source_network == dest_network):
+            mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()  # t_user refers to network
+            if mnp:
+                target_network = mnp.target_network
+            else:
+                target_network = dest_network
+        else:
+            target_network = dest_network
+            # here we have to make client object
+            server = DBSession.query(Network).filter_by(network=dest_network).first()
+            if server:
+                username = server.username
+                password = server.password
+                system_type = server.system_type
+                ip = server.ip
+                port = server.port
+                background_thread = threading.Thread(target=connect_to_server,
+                                                     args=(ip, port, system_id, password, system_type, recipient, message))
+                background_thread.start()
+                # where to join thread
+                #background_thread.join()
+
         # Now check if logged in user selected any package
         total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
         if(total_selected_package > 0):
@@ -161,10 +189,7 @@ class SMPPServer(object):
             selected_package = None
         S = Sms()
         S.sms_type = 'outgoing'
-        if user:
-                S.sms_from = user.cell_number
-        else:
-                S.sms_from = t_user.prefix
+        S.sms_from = cell_number
         S.sms_to = recipient
         S.schedule_delivery_time = datetime.date.today()
         S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
@@ -194,11 +219,30 @@ class SMPPServer(object):
             else:
                 S.package_name = None
                 S.rates = 1.5
+        S.target_network = target_network
         # storing to database
         DBSession.add(S)
         transaction.commit()
         sms = DBSession.query(Sms)[-1]
         return(sms.id)
+
+    def connect_to_server(ip, port, system_id, password, system_type, recipient, message):
+        client = SMPPClient(ip, port, TX, system_id, password, system_type)
+        connection = False
+        while connection is False:
+            if client.connect():
+                connection = True
+                background_thread = threading.Thread(target=client.session.storing_recieved_pdus, args=())
+                background_thread.start()
+
+        if client.login():
+            client.session.send_sms(recipient, message)
+            count = 0
+            while count = 0:
+                count = client.session.notifications_4_client()
+            client.session.processing_recieved_pdus()
+        client.sc.close()
+        background_thread.join()
 
     def query_result(message_id, user_id):
         """
@@ -255,5 +299,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('127.0.0.5', 1337)
+    S.start_serving('127.0.0.6', 1337)
 
