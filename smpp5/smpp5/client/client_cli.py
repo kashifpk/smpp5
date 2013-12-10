@@ -35,15 +35,15 @@ def ui_loop(client):
             client.session.send_sms(recipient, message)
 
         elif(option == 2):
-            message_id = input("Enter the Message Id of Message whom Status is required    ")
+            message_id = input("Enter the Message Id of Message whose Status is required    ")
             client.session.query_status(message_id)
 
         elif(option == 3):
-            message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
+            message_id = input("Enter the Message Id of Message which you want to cancel    ")
             client.session.cancel_sms(message_id)
 
         elif(option == 4):
-            message_id = input("Enter the Message Id of Message whom you want to replace    ")
+            message_id = input("Enter the Message Id of Message which you want to replace    ")
             message = input("Enter the Short Message to replace previous sumbitted short message      ")
             client.session.replace_sms(message_id, message)
 
@@ -53,7 +53,7 @@ def ui_loop(client):
         elif(option == 6):
             count = client.session.notifications_4_client()
             if(count == 0):
-                print("You have no any pending notification...")
+                print("You have no pending notifications...")
             else:
                 while count > 0:
                     client.session.processing_recieved_pdus()
@@ -63,7 +63,7 @@ def ui_loop(client):
             break
 
         else:
-            print("\nInvalid Option......")
+            print("\nInvalid Selection......")
     client.session.unbind()
     time.sleep(1)
     while client.session.state != 5:
