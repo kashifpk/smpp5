@@ -1,3 +1,5 @@
+'''This module is responsible for physicaly routing the smses.
+'''
 from bottle import *
 import android, socket, struct
 
