@@ -116,7 +116,7 @@ if __name__ == '__main__':
         sys.exit()
 
     if client.login():
-        print("Login successful\n")
+        print("Login successfull\n")
             #to check if ui_loop method is functioning correct
         ui_loop(client)
         print("aa gya")
