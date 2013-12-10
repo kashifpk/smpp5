@@ -97,33 +97,32 @@ def get_connect_info():
 
 
 def client_thread(client):
-    while client.sc.is_open is True:
-        client.session.storing_recieved_pdus()
+    while client.sc.is_open is True: #if shared socket and shared connection is open 
+        client.session.storing_recieved_pdus()#call this method of session class via the object passed as parameter
 
 if __name__ == '__main__':
 
     conn_info = get_connect_info()
 
     client = SMPPClient(conn_info['ip'], conn_info['port'], conn_info['bind_type'],
-                        conn_info['system_id'], conn_info['password'], conn_info['system_type'])
+                        conn_info['system_id'], conn_info['password'], conn_info['system_type'])#passing connection information to client object
 
     if client.connect():
         print("Connection established successfully\n")
-        background_thread = threading.Thread(target=client_thread, args=(client,))
-        background_thread.start()
+        background_thread = threading.Thread(target=client_thread, args=(client,))#creating a background thread for the client and giving name of method in target for execution
+        background_thread.start()#starting the background thread
     else:
         print("Connection Refused...Try Again\n")
         sys.exit()
 
     if client.login():
-        print("Login successfull\n")
-            #to check if ui_loop method is functioning correct
-        ui_loop(client)
-        print("aa gya")
-        background_thread.join()
+        print("Login successful\n")
+        ui_loop(client)#to check if ui_loop method is functioning correct
+        print("Yes it is...")
+        background_thread.join()#to assure that main thread should exit when background has completed all its operations
     else:
         print("Login Failed")
-        background_thread.join()
+        background_thread.join()#to assure that main thread should exit when background has completed all its operations
         sys.exit()
 
     # if here then login was successful, now create a background thread for handling traffic from server
