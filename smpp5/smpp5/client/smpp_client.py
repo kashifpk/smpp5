@@ -7,13 +7,7 @@ from smpp5.lib.session.shared_connection import SharedConnection
 import time
 
 
-# Note: This whole module seems mostly unnecessary. We either need this or client_cli module, not both.
-# We can keep this one but should remove most of the methods here as they are implemented in session
-
 class SMPPClient(object):
-    '''
-    Client Class is responsible to encode PDUs and send them to Server and also decode the response get from Server
-    '''
 
     ip = None
     port = None
@@ -25,6 +19,7 @@ class SMPPClient(object):
     sc = None
 
     def __init__(self, ip, port, bind_mode, system_id, password, system_type):
+        "This constructor is responsible for initializing the credentials got via parameters."
         self.ip = ip
         self.port = port
         self.bind_mode = bind_mode
@@ -33,6 +28,7 @@ class SMPPClient(object):
         self.system_type = system_type
 
     def connect(self):
+        "This method is responsible for creating the socket, connecting to it, passing socket object to shared connection class, and passing shared connection class object to session  "
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((self.ip, self.port))
@@ -45,6 +41,7 @@ class SMPPClient(object):
         return True
 
     def login(self):
+        "This method is responsible for binding the client with session on the basis of state of session, if state of session is open, client binds with session via credentials."
         ret = False
         if SessionState.OPEN == self.session.state:
             self.session.bind(self.bind_mode, self.system_id, self.password, self.system_type)
