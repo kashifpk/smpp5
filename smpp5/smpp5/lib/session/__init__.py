@@ -106,6 +106,7 @@ class SMPPSession(object):
         self.server_query_result = ''
         self.server_cancel_result = ''
         self.server_replace_result = ''
+        self.server_commit_db = ''
         self.sever_fetch_sms = ''
         self.user_id = None
         self.smses = {}
@@ -134,7 +135,7 @@ class SMPPSession(object):
             P = self.socket.get_pdu_from_socket()
             if P is not None:
                 if(P.command_id.value == command_ids.deliver_sm_resp):
-                    pass
+                    self.server_commit_db()
                 else:
                     self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
 
@@ -187,7 +188,7 @@ class SMPPSession(object):
 
     def processing_recieved_pdus(self):
         """
-        Client use this method to process pdus responses by calling appropriate method
+        Client use this method to process pdus responses by calling appropriate method.
         """
         isempty = (self.comp_pdus and True) or False
         if isempty is not False:
@@ -196,7 +197,7 @@ class SMPPSession(object):
                 R = pdu['resp']
                 if(command_ids.generic_nack == R.command_id.value):
                     if(command_status.ESME_RINVCMDID == R.command_status.value):
-                        print("You have sent invalid PDU which is not recognized by SMSC ")
+                        print("You have sent invalid PDU which is not recognized by SMSC. ")
                 if(self.state == SessionState.OPEN):
                     if(command_ids.bind_transmitter_resp == R.command_id.value):
                         self.binding_response_handling(R)
@@ -318,9 +319,9 @@ class SMPPSession(object):
 
     def process_enquire_link_response(self, P):
         if (P):
-            return True
+            print("Connection with server exists.")
         else:
-            return False
+            print("Connection with server not exists")
 
     def send_sms(self, recipient, message):
         """
@@ -329,7 +330,7 @@ class SMPPSession(object):
         """
         try:
             if not self._can_do('submit_sm'):
-                raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes")
+                raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes.")
             msg_length = int(len(message))
             P = SubmitSm()
             P.sequence_number = Integer(self._next_seq_num(), 4)
@@ -381,13 +382,13 @@ class SMPPSession(object):
         """
         if(P.command_status.value == 0):
             message_id = P.message_id.value
-            print("Message having message id " + str(message_id) + " has been scheduled for sending")
+            print("Message having message id " + str(message_id) + " has been scheduled for sending.")
             return True
         elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
-            print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length")
+            print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length.")
             return False
         elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
-            print("Sorry message cannot be send because Sending Sms is not allowed in this session state")
+            print("Sorry message cannot be send because Sending Sms is not allowed in this session state.")
             return False
 
     def query_status(self, message_id):
@@ -397,7 +398,7 @@ class SMPPSession(object):
         """
         try:
             if not self._can_do('query_sm'):
-                raise InvalidSessionState("SMPP Session not in a state that allows querying SMSes")
+                raise InvalidSessionState("SMPP Session not in a state that allows querying SMSes.")
 
             P = QuerySm()
             P.sequence_number = Integer(self._next_seq_num(), 4)
@@ -415,10 +416,10 @@ class SMPPSession(object):
         R = QuerySmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
         query_result = self.server_query_result(P.message_id.value, self.user_id)
+        R.message_id = CString(P.message_id.value)
         if(query_result == command_status.ESME_RINVMSGID):
             R.command_status = Integer(command_status.ESME_RINVMSGID, 4)
         else:
-            R.message_id = CString(P.message_id.value)
             R.final_date = CString(str(query_result['final_date']))
             R.message_state = Integer(query_result['state'], 1)
         data = R.encode()
