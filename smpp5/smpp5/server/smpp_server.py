@@ -34,6 +34,7 @@ def handle_client_connection(conn, addr):
     server_session.server_cancel_result = SMPPServer.cancel_result
     server_session.server_replace_result = SMPPServer.replace_result
     server_session.sever_fetch_sms = fetch_incoming_sms
+    server_session.commit_db = commit_db
 
     # background thread 1 to handle clients request pdus by recieving them from socket and storing them in dictionary
     background_thread = threading.Thread(target=handle_client_requests, args=(server_session, conn))
@@ -72,7 +73,6 @@ def deliver_sms(server_session, conn):
         if server_session.state in [SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             time.sleep(5)
             server_session.deliver_sms()
-            transaction.commit()
 
 
 def fetch_incoming_sms(user_id):
@@ -85,6 +85,67 @@ def fetch_incoming_sms(user_id):
     if smses:
         smses.status = 'delivered'
     return(smses)
+
+
+def commit_db():
+    """
+    This method is used to commit database transaction
+    """
+
+    transaction.commit()
+
+
+def connect_info(recipient, message, dest_network, sms_id):
+    """
+    This method is responsible to get connection paramters from database to communicate with destination network
+    server in case when sender sends a message to some other network.
+    """
+
+    # here we have to make client object
+    server = DBSession.query(Network).filter_by(network=dest_network).first()
+    if server:
+        username = server.username
+        password = server.password
+        system_type = server.system_type
+        ip = server.ip
+        port = server.port
+        # Hard coded values to check.....
+        #system_id = 'KIRAN'
+        #password = 'secret08'
+        #system_type = 'SUBMIT1'
+        #ip = '127.0.0.3'
+        #port = 1339
+        background_thread3 = threading.Thread(target=connect_to_server,
+                                              args=(ip, port, system_id, password, system_type, recipient, message,
+                                                    sms_id))
+        background_thread3.start()
+        background_thread3.join()
+
+
+def connect_to_server(ip, port, system_id, password, system_type, recipient, message, sms_id):
+    """
+    This method is tesponsible to create client instance to communicate with destination network server as client.
+    """
+
+    client = SMPPClient(ip, port, 'TX', system_id, password, system_type)
+    connection = False
+    notification = 0
+    while connection is False:   # while connection is not established with server, try to connect.
+        if client.connect():
+            connection = True
+            background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())
+            background_thread4.start()
+
+    if client.login():
+        client.session.send_sms(recipient, message)
+        while notification == 0:
+            notification = client.session.notifications_4_client()
+        client.session.processing_recieved_pdus()
+        smses = DBSession.query(Sms).filter_by(id=sms_id).first()
+        smses.status = 'delivered'
+    client.sc.close()
+    commit_db()
+    background_thread4.join()
 
 
 class SMPPServer(object):
@@ -215,43 +276,6 @@ class SMPPServer(object):
             connect_info(recipient, message, dest_network, sms.id)
         return(sms.id)
 
-    def connect_info(recipient, message, dest_network, sms_id):
-        # here we have to make client object
-        server = DBSession.query(Network).filter_by(network=dest_network).first()
-        if server:
-            username = server.username
-            password = server.password
-            system_type = server.system_type
-            ip = server.ip
-            port = server.port
-            background_thread3 = threading.Thread(target=connect_to_server,
-                                                  args=(ip, port, system_id, password, system_type, recipient, message,
-                                                        sms_id))
-            background_thread3.start()
-            background_thread3.join()
-
-    def connect_to_server(ip, port, system_id, password, system_type, recipient, message, sms_id):
-        client = SMPPClient(ip, port, TX, system_id, password, system_type)
-        connection = False
-        while connection is False:
-            if client.connect():
-                connection = True
-                background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())
-                background_thread4.start()
-
-        if client.login():
-            client.session.send_sms(recipient, message)
-            count = 0
-            while count == 0:
-                count = client.session.notifications_4_client()
-            status = client.session.processing_recieved_pdus()
-            if status is True:
-                smses = DBSession.query(Sms).filter_by(id=sms_id).first()
-                smses.status = 'delivered'
-        client.sc.close()
-        transaction.commit()
-        background_thread4.join()
-
     def query_result(message_id, user_id):
         """
         This method is responsible to query database for provided message id to view the status of Sms
@@ -307,5 +331,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('127.0.0.8', 1337)
+    S.start_serving('127.0.0.1', 1337)
 
