@@ -102,7 +102,7 @@ def connect_info(recipient, message, dest_network, sms_id):
     """
 
     # here we have to make client object
-    server = DBSession.query(Network).filter_by(network=dest_network).first()
+    server = DBSession.query(Network).filter_by(network=dest_network).first() 
     if server:
         username = server.username
         password = server.password
@@ -124,7 +124,7 @@ def connect_info(recipient, message, dest_network, sms_id):
 
 def connect_to_server(ip, port, system_id, password, system_type, recipient, message, sms_id):
     """
-    This method is tesponsible to create client instance to communicate with destination network server as client.
+    This method is responsible to create client instance to communicate with destination network server as client.
     """
 
     client = SMPPClient(ip, port, 'TX', system_id, password, system_type)
@@ -133,7 +133,8 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
     while connection is False:   # while connection is not established with server, try to connect.
         if client.connect():
             connection = True
-            background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())
+            # this thread is checking the socket for getting responses from other server and save in dictionary.
+            background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # to recieve pdu response from other smpp server to whom it has sent the request.
             background_thread4.start()
 
     if client.login():
@@ -216,16 +217,15 @@ class SMPPServer(object):
         cell_number = user.cell_number  # cell number of sender
         source_prefix = cell_number[0:6]  # extract prefix of sender number
         dest_prefix = recipient[0:6]  # extract prefix of recipient
-        s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
-        source_network = s_network.network  # refers to sender network
+        s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first() 
+        source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
         d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
         dest_network = d_network.network   # refers to recipient network
-        if(source_network == dest_network):
-            mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()
-            if mnp:
-                target_network = mnp.target_network
-            else:
-                target_network = dest_network
+        mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()  # querying for mobile number conversion
+        if mnp:
+            target_network = mnp.target_network
+        elif(source_network == dest_network):
+            target_network = dest_network
         else:
             target_network = dest_network
 
@@ -267,13 +267,13 @@ class SMPPServer(object):
             else:
                 S.package_name = None
                 S.rates = 1.5
-        S.target_network = target_network
+        S.target_network = target_network  # process sms file would use it to send to respective network of which server is.
         # storing to database
         DBSession.add(S)
         transaction.commit()
-        sms = DBSession.query(Sms)[-1]
-        if target_network != source_network:
-            connect_info(recipient, message, dest_network, sms.id)
+        sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying. 
+        if target_network != source_network:  # if destination and source network is different 
+            connect_info(recipient, message, target_network, sms.id)  # connect to the destination's smpp server.
         return(sms.id)
 
     def query_result(message_id, user_id):
@@ -331,5 +331,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('127.0.0.1', 1337)
+    S.start_serving('192.168.5.34', 1338)
 
