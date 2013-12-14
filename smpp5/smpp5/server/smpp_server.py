@@ -45,6 +45,10 @@ def handle_client_connection(conn, addr):
     background_thread2 = threading.Thread(target=deliver_sms, args=(server_session, conn))
     background_thread2.start()
 
+    # background thread 3 to process incoming smses after login
+    background_thread3 = threading.Thread(target=process_incomming_sms, args=(server_session, conn))
+    background_thread3.start()
+
     # current thread for receiving responses from client and storing them in dict
     while server_session.state != SessionState.UNBOUND:
         server_session.handle_pdu()
@@ -53,12 +57,13 @@ def handle_client_connection(conn, addr):
     #time.sleep(1)
     background_thread.join()
     background_thread2.join()
+    background_thread3.join()
 
 
 def handle_client_requests(server_session, conn):
     """
     This method handles client request/response pdus by receiving them from socket and storing them in dictionary
-    till Unbound state
+    till Unbound state.
     """
 
     while conn.is_open is True:
@@ -67,12 +72,13 @@ def handle_client_requests(server_session, conn):
 
 def deliver_sms(server_session, conn):
     """
-    This method checks database for smses every 5 seconds and deliver sms to client if any
+    This method checks database for smses every 5 seconds and deliver sms to client if any.
     """
     while conn.is_open is True:
         if server_session.state in [SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             time.sleep(5)
             server_session.deliver_sms()
+            transaction.commit()
 
 
 def fetch_incoming_sms(user_id):
@@ -80,11 +86,43 @@ def fetch_incoming_sms(user_id):
     This method query database to retrieve pending incoming smses for logged in client..
     """
 
-    smses = DBSession.query(Sms).filter_by(sms_type='incoming', user_id=user_id, status='received').first()
-    sms = smses
+    smses = DBSession.query(Sms).filter_by(sms_type='incoming', user_id=user_id, status='recieved').first()
     if smses:
         smses.status = 'delivered'
     return(smses)
+
+
+def process_incomming_sms(server_session, conn):
+    time.sleep(2)
+    while conn.is_open is True:
+        transaction.commit()
+        smses = DBSession.query(Sms).filter_by(sms_type='incoming', status='recieved', target_network=None).all()
+        if smses:
+            for S in smses:
+                sms_to = S.sms_to
+                sms_from = S.sms_from
+                mnp = DBSession.query(Mnp).filter_by(cell_number=sms_to).first()  # querying for mobile number conversion
+                if mnp:
+                    target_network = mnp.target_network
+                    S.state = 'outgoing'
+                else:
+                    source_prefix = sms_from[0:6]  # extract prefix of sender number
+                    dest_prefix = sms_to[0:6]  # extract prefix of recipient
+                    s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
+                    source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
+                    d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
+                    dest_network = d_network.network   # refers to recipient network
+                    user = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()  # user refers to normal user
+                    if user:
+                        S.user_id = user.user_id
+                        target_network = None
+                    else:
+                        target_network = dest_network
+                        S.state = 'outgoing'
+                S.target_network = target_network
+                if target_network != source_network:
+                    connect_info(sms_to, S.msg, dest_network, S.id, sms_from)
+            transaction.commit()
 
 
 def commit_db():
@@ -95,16 +133,16 @@ def commit_db():
     transaction.commit()
 
 
-def connect_info(recipient, message, dest_network, sms_id):
+def connect_info(recipient, message, dest_network, sms_id, sender_number):
     """
     This method is responsible to get connection paramters from database to communicate with destination network
     server in case when sender sends a message to some other network.
     """
 
     # here we have to make client object
-    server = DBSession.query(Network).filter_by(network=dest_network).first() 
+    server = DBSession.query(Network).filter_by(network=dest_network).first()
     if server:
-        username = server.username
+        system_id = server.username
         password = server.password
         system_type = server.system_type
         ip = server.ip
@@ -117,12 +155,12 @@ def connect_info(recipient, message, dest_network, sms_id):
         #port = 1339
         background_thread3 = threading.Thread(target=connect_to_server,
                                               args=(ip, port, system_id, password, system_type, recipient, message,
-                                                    sms_id))
+                                                    sms_id, sender_number))
         background_thread3.start()
         background_thread3.join()
 
 
-def connect_to_server(ip, port, system_id, password, system_type, recipient, message, sms_id):
+def connect_to_server(ip, port, system_id, password, system_type, recipient, message, sms_id, sender_number):
     """
     This method is responsible to create client instance to communicate with destination network server as client.
     """
@@ -138,14 +176,14 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
             background_thread4.start()
 
     if client.login():
-        client.session.send_sms(recipient, message)
+        client.session.send_sms(recipient, message, sender_number)
         while notification == 0:
             notification = client.session.notifications_4_client()
         client.session.processing_recieved_pdus()
         smses = DBSession.query(Sms).filter_by(id=sms_id).first()
         smses.status = 'delivered'
+        commit_db()
     client.sc.close()
-    commit_db()
     background_thread4.join()
 
 
@@ -207,17 +245,21 @@ class SMPPServer(object):
             print("Validation failed")
             return 'false'
 
-    def db_storage(recipient, message, user_id):
+    def db_storage(recipient, message, user_id, sender):
         """
         This method is responsible to store Sms and related fields provided by client in database
         """
 
+        sender = sender.decode(encoding='ascii')
         recipient = recipient.decode(encoding='ascii')  # recipient refers to destination address
-        user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # user refers to normal user
-        cell_number = user.cell_number  # cell number of sender
-        source_prefix = cell_number[0:6]  # extract prefix of sender number
+        if sender is not '':
+            sender_number = sender
+        else:
+            user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # user refers to normal user
+            sender_number = user.cell_number  # cell number of sender
+        source_prefix = sender_number[0:6]  # extract prefix of sender number
         dest_prefix = recipient[0:6]  # extract prefix of recipient
-        s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first() 
+        s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
         source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
         d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
         dest_network = d_network.network   # refers to recipient network
@@ -237,7 +279,7 @@ class SMPPServer(object):
             selected_package = None
         S = Sms()
         S.sms_type = 'outgoing'
-        S.sms_from = cell_number
+        S.sms_from = sender_number
         S.sms_to = recipient
         S.schedule_delivery_time = datetime.date.today()
         S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
@@ -273,7 +315,7 @@ class SMPPServer(object):
         transaction.commit()
         sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying. 
         if target_network != source_network:  # if destination and source network is different 
-            connect_info(recipient, message, target_network, sms.id)  # connect to the destination's smpp server.
+            connect_info(recipient, message, target_network, sms.id, sender_number)  # connect to the destination's smpp server.
         return(sms.id)
 
     def query_result(message_id, user_id):
@@ -331,5 +373,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('192.168.5.34', 1338)
+    S.start_serving('127.0.0.9', 1337)
 
