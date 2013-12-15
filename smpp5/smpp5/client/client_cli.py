@@ -42,6 +42,7 @@ def ui_loop(client):
             elif op == 2:
                 recipients = ''
                 recipient = ''
+                total_recipient = 0
                 while True:
                     recipients = input("Enter the Recipient..Type quit if no more destinations to enter   ")
                     if recipients.lower() == 'quit':
@@ -49,9 +50,10 @@ def ui_loop(client):
                     if not recipients.startswith('+'):
                         recipients = '+92' + recipients[1:]
                     recipient = recipient + recipients + '\n'
+                    total_recipient++
 
                 message = input("Enter the Short Message to send                                          ")
-                client.session.send_sms(recipient, message, None)
+                client.session.send_multiple_sms(recipient, message, None, total_recipient)
 
             else:
                 print("Invalid option")
