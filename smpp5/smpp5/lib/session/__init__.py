@@ -157,6 +157,8 @@ class SMPPSession(object):
                     self.handle_bind(P)
                 elif command_ids.submit_sm == P.command_id.value:
                     self.process_sms(P)
+                elif command_ids.submit_multi == P.command_id.value:
+                    self.process_multiple_sms(P)
                 elif(command_ids.query_sm == P.command_id.value):
                     self.process_query(P)
                 elif(command_ids.cancel_sm == P.command_id.value):
@@ -208,6 +210,8 @@ class SMPPSession(object):
                 else:
                     if(command_ids.submit_sm_resp == R.command_id.value):
                         self.send_sms_response(R)
+                    elif(command_ids.submit_multi_resp == R.command_id.value):
+                        self.send_multiple_sms_response(R)
                     elif(command_ids.query_sm_resp == R.command_id.value):
                         self.query_sms_response(R)
                     elif(command_ids.replace_sm_resp == R.command_id.value):
@@ -381,6 +385,70 @@ class SMPPSession(object):
         """
         This method is responsible to process submit sm response send by server...
         """
+        if(P.command_status.value == 0):
+            message_id = P.message_id.value.decode(encoding='ascii').
+            print("Message having message id " + str(message_id) + " has been scheduled for sending.")
+        elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
+            print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length.")
+        elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
+            print("Sorry message cannot be send because Sending Sms is not allowed in this session state.")
+
+    def send_multiple_sms(self, recipient, message, sender, total_recipient):
+        """
+        This method is responsible for taking the Sumbit short message request send by client and writes it to
+        the socket to be read by server.
+        """
+        try:
+            if not self._can_do('submit_multi_sm'):
+                raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes.")
+            msg_length = int(len(message))
+            P = SubmitMulti()
+            P.sequence_number = Integer(self._next_seq_num(), 4)
+            if sender:
+                P.source_addr = CString(sender)
+            P.number_of_dests = Integer(total_recipient, 1)
+            P.destination_addr = CString(recipient)
+            P.schedule_delivery_time = CString("")
+            P.validity_period = CString("")
+            P.sm_default_msg_id = Integer(0, 1)
+            if(msg_length < 255):
+                P.sm_length = Integer(msg_length, 1)
+                P.short_message = CString(str(message))
+            else:
+                P.message_payload = TLV(tlv_tag.message_payload, message)
+            data = P.encode()
+        #storing pdu in dictionary named responses
+            self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
+            self.socket.send(data)
+        except InvalidSessionState as e:
+            print(e.value)
+
+    def process_multiple_sms(self, P):
+        """
+        This method is responsible for handling the request sent by client and sending the response pdu to the client
+        for successfull submission
+        """
+        if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
+            R = SubmitMultiResp()
+            R.sequence_number = Integer(P.sequence_number.value, 4)
+            if(P.sm_length.value > 255):
+                R.command_status = Integer(command_status.ESME_RINVMSGLEN, 4)
+            else:
+                if(P.short_message.value):
+                    message = P.short_message.value.decode(encoding='ascii')
+                else:
+                    message = P.message_payload.value.value
+                db_storage = self.server_db_store(P.destination_addr.value, message, self.user_id, P.source_addr.value)
+            # in db_storage the message id of sms is returned
+                R.message_id = CString(str(db_storage))
+        else:
+            R = SubmitSmResp()
+            R.sequence_number = Integer(P.sequence_number.value, 4)
+            R.command_status = Integer(command_status.ESME_RINVBNDSTS, 4)
+        data = R.encode()
+        self.socket.send(data)
+
+    def send_multiple_sms_response(R):
         if(P.command_status.value == 0):
             message_id = P.message_id.value
             message_ids = P.message_id.value.decode(encoding='ascii').splitlines()
