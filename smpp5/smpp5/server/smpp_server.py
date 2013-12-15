@@ -96,6 +96,10 @@ def thread_4_incoming_sms():
 
 
 def process_incoming_sms():
+    """
+    This method is responsible for processing incoming smses
+    """
+
     smses = DBSession.query(Sms).filter_by(sms_type='incoming', status='recieved', target_network=None, user_id=None).all()
     if smses:
         for S in smses:
