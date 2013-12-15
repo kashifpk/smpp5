@@ -29,11 +29,32 @@ def ui_loop(client):
         print("Press 8 to exit")
         option = int(input())
         if(option == 1):
-            recipient = input("Enter the Recipient                                   ")
-            message = input("Enter the Short Message to send      ")
-            if not recipient.startswith('+'):
-                recipient = '+92' + recipient[1:]
-            client.session.send_sms(recipient, message)
+            print("\nPress 1 to send message to single destination.")
+            print("Press 2 to send message to multiple destinations.")
+            op = int(input())
+            if op == 1:
+                recipient = input("Enter the Recipient                ")
+                message = input("Enter the Short Message to send      ")
+                if not recipient.startswith('+'):
+                    recipient = '+92' + recipient[1:]
+                client.session.send_sms(recipient, message, None)
+
+            elif op == 2:
+                recipients = ''
+                recipient = ''
+                while True:
+                    recipients = input("Enter the Recipient..Type quit if no more destinations to enter   ")
+                    if recipients.lower() == 'quit':
+                        break
+                    if not recipients.startswith('+'):
+                        recipients = '+92' + recipients[1:]
+                    recipient = recipient + recipients + '\n'
+
+                message = input("Enter the Short Message to send                                          ")
+                client.session.send_sms(recipient, message, None)
+
+            else:
+                print("Invalid option")
 
         elif(option == 2):
             message_id = input("Enter the Message Id of Message whom Status is required    ")
@@ -117,7 +138,7 @@ if __name__ == '__main__':
 
     if client.connect():
         print("Connection established successfully\n")
-        background_thread = threading.Thread(target=client.session.storing_recieved_pdus, args=())
+        background_thread = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # to recieve response from server
         background_thread.start()
     else:
         print("Connection Refused...Try Again\n")
