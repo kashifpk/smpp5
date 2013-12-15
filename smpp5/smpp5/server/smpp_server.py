@@ -130,6 +130,31 @@ def process_incoming_sms():
                 connect_info(sms_to, S.msg, dest_network, S.id, sms_from)
 
 
+def process_outgoing_sms(sender, user_id, recipient):
+    """
+    This method is responsible for processing outgoing smses.
+    """
+    if sender is not '':
+            sender_number = sender
+    else:
+        user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # user refers to normal user
+        sender_number = user.cell_number  # cell number of sender
+    source_prefix = sender_number[0:6]  # extract prefix of sender number
+    s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
+    source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
+    dest_prefix = recipient[0:6]  # extract prefix of recipient
+    d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
+    dest_network = d_network.network   # refers to recipient network
+    mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()  # querying for mobile number conversion
+    if mnp:
+        target_network = mnp.target_network
+    elif(source_network == dest_network):
+        target_network = dest_network
+    else:
+        target_network = dest_network
+    return(dict(sender_number=sender_number, source_network=source_network, target_network=target_network))
+
+
 def commit_db():
     """
     This method is used to commit database transaction
@@ -192,6 +217,40 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
     background_thread4.join()
 
 
+def selected_packages(user_id):
+    """
+    This method is used by server to ensure if logged in user has selected any package or not.
+    """
+
+    total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
+    if(total_selected_package > 0):
+        selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id)[-1]  # retrieve last selected package
+    else:
+        selected_package = None
+    if(selected_package is None):
+            package_name = None
+            rates = 1.5
+    else:
+        end_date = int(selected_package.end_date.strftime('%d'))
+        end_month = int(selected_package.end_date.strftime('%m'))
+        date = datetime.datetime.now()
+        today_date = int(date.strftime('%d'))
+        today_month = int(date.strftime('%m'))
+        if(end_month > today_month and int(selected_package.smses) > 0):  # check if package is expired
+            package_name = selected_package.package_name
+            rates = 0.0
+            selected_package.smses = selected_package.smses-1
+        elif(end_month == today_month):
+            if(end_date >= today_date and int(selected_package.smses) > 0):
+                package_name = selected_package.package_name
+                rates = 0.0
+                selected_package.smses = selected_package.smses-1
+        else:
+            package_name = None
+            rates = 1.5
+    return(dict(package_name=package_name, rates=rates))
+
+
 class SMPPServer(object):
     '''
     Server class is responsible for performing database related activities as requested by client like retrieving,
@@ -251,78 +310,44 @@ class SMPPServer(object):
             print("Validation failed")
             return 'false'
 
-    def db_storage(recipient, message, user_id, sender):
+    def db_storage(recipients, message, user_id, sender):
         """
         This method is responsible to store Sms and related fields provided by client in database
         """
 
+        sms_ids = ''
         sender = sender.decode(encoding='ascii')
-        recipient = recipient.decode(encoding='ascii')  # recipient refers to destination address
-        if sender is not '':
-            sender_number = sender
-        else:
-            user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # user refers to normal user
-            sender_number = user.cell_number  # cell number of sender
-        source_prefix = sender_number[0:6]  # extract prefix of sender number
-        dest_prefix = recipient[0:6]  # extract prefix of recipient
-        s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
-        source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
-        d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
-        dest_network = d_network.network   # refers to recipient network
-        mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()  # querying for mobile number conversion
-        if mnp:
-            target_network = mnp.target_network
-        elif(source_network == dest_network):
-            target_network = dest_network
-        else:
-            target_network = dest_network
+        recipients = recipients.decode(encoding='ascii').splitlines()
+        selected_package = selected_packages(user_id)
+        for i in range(len(recipients)):
+            recipient = recipients[i]
+            processed_fields = process_outgoing_sms(sender, user_id, recipient)
 
-        # Now check if logged in user selected any package
-        total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
-        if(total_selected_package > 0):
-            selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id)[-1]  # retrieve last selected package
-        else:
-            selected_package = None
-        S = Sms()
-        S.sms_type = 'outgoing'
-        S.sms_from = sender_number
-        S.sms_to = recipient
-        S.schedule_delivery_time = datetime.date.today()
-        S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
-        S.msg = message
-        S.timestamp = datetime.date.today()
-        S.status = 'scheduled'
-        S.msg_type = 'text'
-        S.user_id = user_id
-        if(selected_package is None):
-            S.package_name = None
-            S.rates = 1.5
-        else:
-            end_date = int(selected_package.end_date.strftime('%d'))
-            end_month = int(selected_package.end_date.strftime('%m'))
-            date = datetime.datetime.now()
-            today_date = int(date.strftime('%d'))
-            today_month = int(date.strftime('%m'))
-            if(end_month > today_month and int(selected_package.smses) > 0):  # check if package is expired
-                S.package_name = selected_package.package_name
-                S.rates = 0.0
-                selected_package.smses = selected_package.smses-1
-            elif(end_month == today_month):
-                if(end_date >= today_date and int(selected_package.smses) > 0):
-                    S.package_name = selected_package.package_name
-                    S.rates = 0.0
-                    selected_package.smses = selected_package.smses-1
-            else:
-                S.package_name = None
-                S.rates = 1.5
-        S.target_network = target_network  # process sms file would use it to send to respective network of which server is.
-        # storing to database
-        DBSession.add(S)
+        # storing vaues to database
+
+            S = Sms()
+            S.sms_type = 'outgoing'
+            S.sms_from = processed_fields['sender_number']
+            S.sms_to = recipient
+            S.schedule_delivery_time = datetime.date.today()
+            S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
+            S.msg = message
+            S.timestamp = datetime.date.today()
+            S.status = 'scheduled'
+            S.msg_type = 'text'
+            S.user_id = user_id
+            S.package_name = selected_package['package_name']
+            S.rates = selected_package['rates']
+            S.target_network = processed_fields['target_network']  # process sms file would use it to send to respective network of which server is.
+            # storing to database
+            DBSession.add(S)
+            sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying.
+            sms_ids = sms_ids + str(sms.id) + '\n'
+            if processed_fields['target_network'] != processed_fields['source_network']:  # if destination and source network is different 
+                connect_info(recipient, message, processed_fields['target_network'], sms.id,
+                             processed_fields['sender_number'])  # connect to the destination's smpp server.
         transaction.commit()
-        sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying. 
-        if target_network != source_network:  # if destination and source network is different 
-            connect_info(recipient, message, target_network, sms.id, sender_number)  # connect to the destination's smpp server.
-        return(sms.id)
+        return(sms_ids)
 
     def query_result(message_id, user_id):
         """
