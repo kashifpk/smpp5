@@ -38,8 +38,11 @@ def say(request):
     if "POST" == request.method:
         sms_body = request.POST['body']
         sms_to = sms_body.splitlines()[0]
-        sms_from = request.POST['address']
-        message = sms_body.splitlines()[1]
+        sms_from = sms_body.splitlines()[1]
+        try:
+            message = sms_body.splitlines()[2]
+        except:
+            message = ''
         #Making Instance of Sms and Saving values in db
         S = Sms()
         S.sms_type = 'incoming'
@@ -49,22 +52,12 @@ def say(request):
         S.schedule_delivery_time = datetime.date.today()
         S.validity_period = None
         S.msg = message
-        user_number = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()
-        # if number in sms_to is not present in user_number table then find number in telecom table
-        if(user_number is None):
-            prefix = '0'+sms_to[3:6]
-            telecom_number = DBSession.query(Prefix_Match).filter_by(prefix=prefix).first()
-            if(telecom_number is not None):
-                users = DBSession.query(User).filter_by(user_id=telecom_number.user_id).first()
-                if(users.bind_account_type == 'telecom'):
-                    S.user_id = telecom_number.user_id
-        else:
-            S.user_id = user_number.user_id
+        S.user_id = None
         S.timestamp = datetime.datetime.now()
         S.msg_type = 'text'
         S.rates = 0.0
-        if(user_number or telecom_number is not None):
-            DBSession.add(S)
+        S.target_network = None
+        DBSession.add(S)
         return{}
 
 
