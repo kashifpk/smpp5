@@ -10,7 +10,7 @@ import sys
 import socket
 import time
 import datetime
-from copy import deepcopy
+import transaction
 from smpp5.lib.parameter_types import Integer, CString, String, TLV
 from smpp5.lib.util.hex_print import hex_convert, hex_print
 from smpp5.lib.constants import *
@@ -135,7 +135,7 @@ class SMPPSession(object):
             P = self.socket.get_pdu_from_socket()
             if P is not None:
                 if(P.command_id.value == command_ids.deliver_sm_resp):
-                    self.server_commit_db()
+                    pass
                 else:
                     self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
 
@@ -192,7 +192,7 @@ class SMPPSession(object):
         """
         isempty = (self.comp_pdus and True) or False
         if isempty is not False:
-            seq_no, pdu = self.comp_pdus.popitem()
+            seq_no, pdu = self.comp_pdus.popitem()  # first element from dictionary has been popped up and deleted from dict.
             if pdu['resp'] != '':
                 R = pdu['resp']
                 if(command_ids.generic_nack == R.command_id.value):
@@ -323,7 +323,7 @@ class SMPPSession(object):
         else:
             print("Connection with server not exists")
 
-    def send_sms(self, recipient, message):
+    def send_sms(self, recipient, message, sender):
         """
         This method is responsible for taking the Sumbit short message request send by client and writes it to
         the socket to be read by server.
@@ -334,7 +334,8 @@ class SMPPSession(object):
             msg_length = int(len(message))
             P = SubmitSm()
             P.sequence_number = Integer(self._next_seq_num(), 4)
-            P.source_addr = CString(str(self.user_id))
+            if sender:
+                P.source_addr = CString(sender)
             P.destination_addr = CString(recipient)
             P.schedule_delivery_time = CString("")
             P.validity_period = CString("")
@@ -366,7 +367,7 @@ class SMPPSession(object):
                     message = P.short_message.value.decode(encoding='ascii')
                 else:
                     message = P.message_payload.value.value
-                db_storage = self.server_db_store(P.destination_addr.value, message, self.user_id)
+                db_storage = self.server_db_store(P.destination_addr.value, message, self.user_id, P.source_addr.value)
             # in db_storage the message id of sms is returned
                 R.message_id = CString(str(db_storage))
         else:
