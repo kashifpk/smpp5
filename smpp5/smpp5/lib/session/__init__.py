@@ -383,14 +383,13 @@ class SMPPSession(object):
         """
         if(P.command_status.value == 0):
             message_id = P.message_id.value
-            print("Message having message id " + str(message_id) + " has been scheduled for sending.")
-            return True
+            message_ids = P.message_id.value.decode(encoding='ascii').splitlines()
+            for i in range(len(message_ids)):
+                print("Message having message id " + str(message_ids[i]) + " has been scheduled for sending.")
         elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
             print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length.")
-            return False
         elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
             print("Sorry message cannot be send because Sending Sms is not allowed in this session state.")
-            return False
 
     def query_status(self, message_id):
         """
