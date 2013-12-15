@@ -46,9 +46,6 @@ def handle_client_connection(conn, addr):
     background_thread2.start()
 
     # background thread 3 to process incoming smses after login
-    background_thread3 = threading.Thread(target=process_incomming_sms, args=(server_session, conn))
-    background_thread3.start()
-
     # current thread for receiving responses from client and storing them in dict
     while server_session.state != SessionState.UNBOUND:
         server_session.handle_pdu()
@@ -57,7 +54,6 @@ def handle_client_connection(conn, addr):
     #time.sleep(1)
     background_thread.join()
     background_thread2.join()
-    background_thread3.join()
 
 
 def handle_client_requests(server_session, conn):
@@ -92,37 +88,42 @@ def fetch_incoming_sms(user_id):
     return(smses)
 
 
-def process_incomming_sms(server_session, conn):
-    time.sleep(2)
-    while conn.is_open is True:
+def thread_4_incoming_sms():
+    while True:
+        process_incoming_sms()
         transaction.commit()
-        smses = DBSession.query(Sms).filter_by(sms_type='incoming', status='recieved', target_network=None).all()
-        if smses:
-            for S in smses:
-                sms_to = S.sms_to
-                sms_from = S.sms_from
-                mnp = DBSession.query(Mnp).filter_by(cell_number=sms_to).first()  # querying for mobile number conversion
-                if mnp:
-                    target_network = mnp.target_network
-                    S.state = 'outgoing'
+        time.sleep(5)
+
+
+def process_incoming_sms():
+    smses = DBSession.query(Sms).filter_by(sms_type='incoming', status='recieved', target_network=None, user_id=None).all()
+    if smses:
+        for S in smses:
+            sms_to = S.sms_to
+            sms_from = S.sms_from
+            mnp = DBSession.query(Mnp).filter_by(cell_number=sms_to).first()  # querying for mobile number conversion
+            if mnp:
+                target_network = mnp.target_network
+                S.sms_type = 'outgoing'
+                S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
+            else:
+                source_prefix = sms_from[0:6]  # extract prefix of sender number
+                dest_prefix = sms_to[0:6]  # extract prefix of recipient
+                s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
+                source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
+                d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
+                dest_network = d_network.network   # refers to recipient network
+                user = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()  # user refers to normal user
+                if user:
+                    S.user_id = user.user_id
+                    target_network = None
                 else:
-                    source_prefix = sms_from[0:6]  # extract prefix of sender number
-                    dest_prefix = sms_to[0:6]  # extract prefix of recipient
-                    s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
-                    source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
-                    d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
-                    dest_network = d_network.network   # refers to recipient network
-                    user = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()  # user refers to normal user
-                    if user:
-                        S.user_id = user.user_id
-                        target_network = None
-                    else:
-                        target_network = dest_network
-                        S.state = 'outgoing'
-                S.target_network = target_network
-                if target_network != source_network:
-                    connect_info(sms_to, S.msg, dest_network, S.id, sms_from)
-            transaction.commit()
+                    target_network = dest_network
+                    S.sms_type = 'outgoing'
+                    S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
+            S.target_network = target_network
+            if target_network != source_network:
+                connect_info(sms_to, S.msg, dest_network, S.id, sms_from)
 
 
 def commit_db():
@@ -202,14 +203,16 @@ class SMPPServer(object):
         This method is used by server to accept binding request of client on ip address on which server is listening
         and also creating seperate process to handle each client..
         """
-
         print("*** Seving on {host}:{port}".format(host=host, port=port))
 
         if '0.0.0.0' == host:  # translating all available ips to socket convention
             host = ''
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((host, port))  # built-in method 
+        self.socket.bind((host, port))  # built-in method
+        db.bind_session()
+        background_thread1 = threading.Thread(target=thread_4_incoming_sms, args=())
+        background_thread1.start()
 
         try:
             while True:
@@ -233,7 +236,6 @@ class SMPPServer(object):
         This method is used by server to validate credentials provided by client against database
         """
 
-        db.bind_session()
         system_id = system_id.decode(encoding='ascii')
         passhash = hashlib.sha1(bytes(password.decode(encoding='ascii'), encoding="utf8")).hexdigest()
         system_type = system_type.decode(encoding='ascii')
@@ -373,5 +375,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('127.0.0.9', 1337)
+    S.start_serving('192.168.1.3', 1337)
 
