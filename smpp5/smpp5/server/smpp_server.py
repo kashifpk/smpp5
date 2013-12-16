@@ -351,6 +351,7 @@ class SMPPServer(object):
             S.package_name = selected_package['package_name']
             S.rates = selected_package['rates']
             S.target_network = processed_fields['target_network']  # process sms file would use it to send to respective network of which server is.
+            S.client_type = 'smpp'
             DBSession.add(S)
             sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying.
             s = sms.id
