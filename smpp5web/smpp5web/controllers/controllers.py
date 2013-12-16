@@ -39,10 +39,10 @@ def say(request):
         sms_body = request.POST['body']
         sms_to = sms_body.splitlines()[0]
         if not sms_to.startswith('+'):
-                    sms_to = '+92' + sms_to[1:]
+            sms_to = '+92' + sms_to[1:]
         sms_from = sms_body.splitlines()[1]
         if not sms_from.startswith('+'):
-                    sms_from = '+92' + sms_from[1:]
+            sms_from = '+92' + sms_from[1:]
         try:
             message = sms_body.splitlines()[2]
         except:
