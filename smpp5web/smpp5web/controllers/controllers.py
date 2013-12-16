@@ -38,7 +38,11 @@ def say(request):
     if "POST" == request.method:
         sms_body = request.POST['body']
         sms_to = sms_body.splitlines()[0]
+        if not sms_to.startswith('+'):
+                    sms_to = '+92' + sms_to[1:]
         sms_from = sms_body.splitlines()[1]
+        if not sms_from.startswith('+'):
+                    sms_from = '+92' + sms_from[1:]
         try:
             message = sms_body.splitlines()[2]
         except:
@@ -57,6 +61,7 @@ def say(request):
         S.msg_type = 'text'
         S.rates = 0.0
         S.target_network = None
+        S.client_type = 'mobile'
         DBSession.add(S)
         return{}
 
