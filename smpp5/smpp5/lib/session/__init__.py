@@ -78,6 +78,7 @@ class SMPPSession(object):
 
     allowed_actions = {
         'submit_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
+        'submit_multi': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
         'query_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
         'cancel_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
         'replace_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
@@ -386,7 +387,7 @@ class SMPPSession(object):
         This method is responsible to process submit sm response send by server...
         """
         if(P.command_status.value == 0):
-            message_id = P.message_id.value.decode(encoding='ascii').
+            message_id = P.message_id.value.decode(encoding='ascii')
             print("Message having message id " + str(message_id) + " has been scheduled for sending.")
         elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
             print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length.")
@@ -399,7 +400,7 @@ class SMPPSession(object):
         the socket to be read by server.
         """
         try:
-            if not self._can_do('submit_multi_sm'):
+            if not self._can_do('submit_multi'):
                 raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes.")
             msg_length = int(len(message))
             P = SubmitMulti()
@@ -448,7 +449,7 @@ class SMPPSession(object):
         data = R.encode()
         self.socket.send(data)
 
-    def send_multiple_sms_response(R):
+    def send_multiple_sms_response(self, P):
         if(P.command_status.value == 0):
             message_id = P.message_id.value
             message_ids = P.message_id.value.decode(encoding='ascii').splitlines()
