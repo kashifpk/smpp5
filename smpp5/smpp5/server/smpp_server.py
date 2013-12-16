@@ -90,8 +90,9 @@ def fetch_incoming_sms(user_id):
 
 def thread_4_incoming_sms():
     while True:
-        process_incoming_sms()
+        sms_ids = process_incoming_sms()
         transaction.commit()
+        updating_status(sms_ids)
         time.sleep(5)
 
 
@@ -100,6 +101,7 @@ def process_incoming_sms():
     This method is responsible for processing incoming smses
     """
 
+    sms_ids = ''
     smses = DBSession.query(Sms).filter_by(sms_type='incoming', status='recieved', target_network=None, user_id=None).all()
     if smses:
         for S in smses:
@@ -109,6 +111,7 @@ def process_incoming_sms():
             if mnp:
                 target_network = mnp.target_network
                 S.sms_type = 'outgoing'
+                S.status = 'scheduled'
                 S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
             else:
                 source_prefix = sms_from[0:6]  # extract prefix of sender number
@@ -124,10 +127,26 @@ def process_incoming_sms():
                 else:
                     target_network = dest_network
                     S.sms_type = 'outgoing'
+                    S.status = 'scheduled'
                     S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
             S.target_network = target_network
             if target_network != source_network:
                 connect_info(sms_to, S.msg, dest_network, S.id, sms_from)
+                sms_ids = sms_ids + str(S.id) + '\n'
+        return sms_ids
+
+
+def updating_status(sms_ids):
+    """
+    This method is responsible to update status of messages from scheduled to delivered when messages are for server of
+    other network.
+    """
+
+    if sms_ids:
+        sms_ids = sms_ids.splitlines()
+        for sms_id in sms_ids:
+            smses = DBSession.query(Sms).filter_by(id=sms_id).first()
+            smses.status = 'delivered'
 
 
 def process_outgoing_sms(sender, user_id, recipient):
@@ -177,12 +196,7 @@ def connect_info(recipient, message, dest_network, sms_id, sender_number):
         system_type = server.system_type
         ip = server.ip
         port = server.port
-        # Hard coded values to check.....
-        #system_id = 'KIRAN'
-        #password = 'secret08'
-        #system_type = 'SUBMIT1'
-        #ip = '127.0.0.3'
-        #port = 1339
+
         background_thread3 = threading.Thread(target=connect_to_server,
                                               args=(ip, port, system_id, password, system_type, recipient, message,
                                                     sms_id, sender_number))
@@ -205,14 +219,12 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
             background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # to recieve pdu response from other smpp server to whom it has sent the request.
             background_thread4.start()
 
-    if client.login():
+    if client.login():  # if client successfully logins
         client.session.send_sms(recipient, message, sender_number)
         while notification == 0:
             notification = client.session.notifications_4_client()
         client.session.processing_recieved_pdus()
-        smses = DBSession.query(Sms).filter_by(id=sms_id).first()
-        smses.status = 'delivered'
-        commit_db()
+
     client.sc.close()
     background_thread4.join()
 
@@ -315,12 +327,12 @@ class SMPPServer(object):
         This method is responsible to store Sms and related fields provided by client in database
         """
 
-        sms_ids = ''
+        sms_ids = ''    # contains all message ids that are sended by client to recipient of same or different network.
+        smses_ids = ''  # contains only message ids that are sended by client to recipient of some other network.
         sender = sender.decode(encoding='ascii')
         recipients = recipients.decode(encoding='ascii').splitlines()
         selected_package = selected_packages(user_id)
-        for i in range(len(recipients)):
-            recipient = recipients[i]
+        for recipient in recipients:
             processed_fields = process_outgoing_sms(sender, user_id, recipient)
 
         # storing vaues to database
@@ -339,14 +351,16 @@ class SMPPServer(object):
             S.package_name = selected_package['package_name']
             S.rates = selected_package['rates']
             S.target_network = processed_fields['target_network']  # process sms file would use it to send to respective network of which server is.
-            # storing to database
             DBSession.add(S)
             sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying.
+            s = sms.id
             sms_ids = sms_ids + str(sms.id) + '\n'
             if processed_fields['target_network'] != processed_fields['source_network']:  # if destination and source network is different 
-                connect_info(recipient, message, processed_fields['target_network'], sms.id,
+                connect_info(recipient, message, processed_fields['target_network'], s,
                              processed_fields['sender_number'])  # connect to the destination's smpp server.
+                smses_ids = smses_ids + str(sms.id) + '\n'
         transaction.commit()
+        updating_status(smses_ids)
         return(sms_ids)
 
     def query_result(message_id, user_id):
@@ -404,5 +418,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('192.168.1.3', 1337)
+    S.start_serving('192.168.5.34', 1337)
 
