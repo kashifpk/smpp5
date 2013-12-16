@@ -50,7 +50,7 @@ def ui_loop(client):
                     if not recipients.startswith('+'):
                         recipients = '+92' + recipients[1:]
                     recipient = recipient + recipients + '\n'
-                    total_recipient++
+                    total_recipient = total_recipient + 1
 
                 message = input("Enter the Short Message to send                                          ")
                 client.session.send_multiple_sms(recipient, message, None, total_recipient)
