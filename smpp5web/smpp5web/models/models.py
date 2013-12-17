@@ -46,7 +46,7 @@ class Sms(Base):
     client_type = Column(Unicode(30))
 
     def __init__(self, sms_type=None, sms_from=None, sms_to=None, schedule_delivery_time=None, validity_period=None,
-                 msg=None, timestamp=None, status=None, user_id=None, package_name=None, rates=None, target_network=None):
+                 msg=None, timestamp=None, status=None, user_id=None, package_name=None, rates=None, target_network=None, client_type=None):
         self.sms_type = sms_type
         self.sms_from = sms_from
         self.sms_to = sms_to
@@ -59,7 +59,7 @@ class Sms(Base):
         self.package_name = package_name
         self.rates = rates
         self.target_network = target_network
-
+        self.client_type = client_type
 
 class User_Number(Base):
     __tablename__ = 'user_number'
