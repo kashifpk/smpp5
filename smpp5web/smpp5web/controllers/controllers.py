@@ -114,7 +114,7 @@ def weeklygraph(request):
             else:
                 date.append(smses[row][col].strftime("%Y-%m-%d"))
 
-    return{'sms': sms, 'date': date, 'name': 'Week', 'traffic': 'Weekly'}
+    return{'sms': sms, 'date': date, 'name': '', 'traffic': 'Weekly'}
 
 
 @view_config(route_name='monthlygraphs', renderer='graphs.mako')
@@ -160,6 +160,7 @@ def packages(request):
         selected_package = DBSession.query(Selected_package).filter_by(user_id=user)[-1]
         end_date = int(selected_package.end_date.strftime('%d'))
         end_month = int(selected_package.end_date.strftime('%m'))
+        end_year = int(selected_package.end_date.strftime('%y'))
     else:
         selected_package = None
         end_date = None
@@ -167,8 +168,9 @@ def packages(request):
     date = datetime.datetime.now()
     today_date = int(date.strftime('%d'))
     today_month = int(date.strftime('%m'))
+    today_year = int(date.strftime('%y'))
     return{'selected_package': selected_package, 'today_date': today_date, 'today_month': today_month,
-           'end_date': end_date, 'end_month': end_month}
+           'today_year': today_year, 'end_date': end_date, 'end_month': end_month,  'end_year': end_year}
 
 
 @view_config(route_name='select_packages', renderer='select_packages.mako')
