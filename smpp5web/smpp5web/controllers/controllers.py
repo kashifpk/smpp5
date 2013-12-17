@@ -105,7 +105,7 @@ def weeklygraph(request):
     todaydate = datetime.date.today()
     previousdate = todaydate-datetime.timedelta(days=7)
     smses = DBSession.query(Sms.timestamp,
-                            func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA',
+                            func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user,
                                                                                         sms_type='outgoing', status='delivered').filter(Sms.timestamp >= previousdate).all()
     for row in range(len(smses)):
         for col in range(len(smses[row])):
@@ -125,7 +125,7 @@ def monthlygraph(request):
     todaydate = datetime.date.today()
     currentmonth = todaydate.month
     month_name = todaydate.strftime('%B')
-    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user, sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
     for row in range(len(smses)):
         for col in range(len(smses[row])):
             if col == 1:
@@ -141,7 +141,7 @@ def dailygraph(request):
     user = request.session['logged_in_user']
     sms = []
     date = []
-    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing', status='delivered').all()
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user, sms_type='outgoing', status='delivered').all()
     for row in range(len(smses)):
         for col in range(len(smses[row])):
             if col == 1:
