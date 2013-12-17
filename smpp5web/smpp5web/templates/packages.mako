@@ -54,7 +54,13 @@ p {color:#369;}
     <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
     % if selected_package is None:
         <center>No package has been selected yet </center>
-    % elif end_month<today_month:
+    % elif end_year<today_year:
+        <center>Your Package has been expired or there are not remaining sms.. </center>
+        <center>Resubscribe the package <a href= ${request.route_url('select_packages')}>here</a></center>
+    % elif end_month<today_month and end_year<today_year:
+        <center>Your Package has been expired or there are not remaining sms.. </center>
+        <center>Resubscribe the package <a href= ${request.route_url('select_packages')}>here</a></center>
+    % elif end_month<today_month and end_year==today_year:
         <center>Your Package has been expired or there are not remaining sms.. </center>
         <center>Resubscribe the package <a href= ${request.route_url('select_packages')}>here</a></center>
     % elif end_month==today_month:
