@@ -185,13 +185,13 @@ class SMPPSession(object):
         Client background thread uses this method to recieve response/request PDU's and storing them in dictionary.
         '''
         while self.socket.is_open is True:
-            R = self.socket.get_pdu_from_socket()
+            R = self.socket.get_pdu_from_socket()  # Client reads request pdu of deliver sms from socket.
             if(R is not None):
-                if R.command_id.value == command_ids.deliver_sm:
-                    self.deliver_sms_response(R)
-                elif(self.pdus[R.sequence_number.value]):
-                    self.comp_pdus[R.sequence_number.value] = self.pdus[R.sequence_number.value]
-                    self.comp_pdus[R.sequence_number.value]['resp'] = R
+                if R.command_id.value == command_ids.deliver_sm:  # If the request read from socket is that of deliver sms then call it's respective response method.
+                    self.deliver_sms_response(R)  # now in variable R response pdu exists means response has been received by our server.
+                elif(self.pdus[R.sequence_number.value]):  # If there is any other response pdu on socket then match in pdus dict 
+                    self.comp_pdus[R.sequence_number.value] = self.pdus[R.sequence_number.value]  # Copy request pdu in comp_pdus dict
+                    self.comp_pdus[R.sequence_number.value]['resp'] = R  # Store response pdu in comp_pdus dict
 
     def processing_recieved_pdus(self):
         """
@@ -331,22 +331,22 @@ class SMPPSession(object):
 
     def send_sms(self, recipient, message, sender):
         """
-        This method is responsible for taking the Sumbit short message request send by client and writes it to
-        the socket to be read by server.
+        This method is responsible for receiving the submit short message request pdu sent by client and writes the response pdu to
+        the socket to be read by the server.
         """
         try:
-            if not self._can_do('submit_sm'):
-                raise InvalidSessionState("SMPP Session not in a state that allows sending SMSes.")
-            msg_length = int(len(message))
-            P = SubmitSm()
+            if not self._can_do('submit_sm'):  # If this action can not be performed in existing bind state.
+                raise InvalidSessionState("SMPP Session is not in such bind state that allows sending SMSes.")
+            msg_length = int(len(message))  # Take the length of message and convert it to the integer. 
+            P = SubmitSm()  # Creates class instance.
             P.sequence_number = Integer(self._next_seq_num(), 4)
-            if sender:
-                P.source_addr = CString(sender)
-            P.destination_addr = CString(recipient)
-            P.schedule_delivery_time = CString("")
-            P.validity_period = CString("")
-            P.sm_default_msg_id = Integer(0, 1)
-            if(msg_length < 255):
+            if sender:  # If source address is available
+                P.source_addr = CString(sender)  # Assign it.
+            P.destination_addr = CString(recipient)  # Assign destination address
+            P.schedule_delivery_time = CString("")  # Assign delivery time
+            P.validity_period = CString("")  # Define validity period for sms.
+            P.sm_default_msg_id = Integer(0, 1)  # Default message id is assigned i-e zero.
+            if(msg_length < 5000):
                 P.sm_length = Integer(msg_length, 1)
                 P.short_message = CString(str(message))
             else:
@@ -642,14 +642,14 @@ class SMPPSession(object):
 
     def deliver_sms_response(self, P):
         """
-        This method is used by client to ensure the recieving of delivered message by sending response to server.
+        This method is used by the client to ensure the recieving of delivered message by sending response to server.
         """
 
-        R = DeliverSmResp()
-        R.sequence_number = Integer(P.sequence_number.value, 4)
-        data = R.encode()
-        self.smses.update({P.sequence_number.value: {'pdu': P, 'read': 'false'}})
-        self.socket.send(data)
+        R = DeliverSmResp()  # Create instance DeliverSmResp pdu.
+        R.sequence_number = Integer(P.sequence_number.value, 4)  # Get the sequence number of the request pdu and assign it to resp pdu field.
+        data = R.encode()  # Encode the response pdu.
+        self.smses.update({P.sequence_number.value: {'pdu': P, 'read': 'false'}})  # Add this request pdu to the dictionary and mark as unread.  
+        self.socket.send(data)  # Send response pdu to the socket.
 
     def view_smses(self):
         """
