@@ -182,7 +182,7 @@ class SMPPSession(object):
 
     def storing_recieved_pdus(self):
         '''
-        Client background thread use this method to recieve response/request PDU's and storing them in dictionary.
+        Client background thread uses this method to recieve response/request PDU's and storing them in dictionary.
         '''
         while self.socket.is_open is True:
             R = self.socket.get_pdu_from_socket()

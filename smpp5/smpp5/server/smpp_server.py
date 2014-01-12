@@ -29,7 +29,7 @@ def handle_client_connection(conn, addr):
     print("Accepted connection from: " + repr(addr))
     server_session = SMPPSession('server', conn)  # SMPPSession class object has been created.
     
-    # To use server class variable values in session module, return values have been passed.
+    # Server class has session object so its methods are easily accessible here, return values have been passed.
     server_session.server_db_store = SMPPServer.db_storage  # sms_ids have been passed to variable in SMPP Session.
     server_session.server_validate_method = SMPPServer.validate 
     server_session.server_query_result = SMPPServer.query_result
@@ -97,6 +97,7 @@ def fetch_incoming_sms(user_id):
 
 
 def thread_4_incoming_sms():
+    'This method will infinitely process incoming sms till server terminates.'
     while True:
         process_incoming_sms()
         transaction.commit()
@@ -106,42 +107,42 @@ def thread_4_incoming_sms():
 
 def process_incoming_sms():
     """
-    This method is responsible for processing incoming smses.
+    This method is responsible for processing incoming smses into the database.
     """
 
     sms_ids = ''
+    # Fetch smses from database whose type is incoming, status is received, target netwrok is none because its been sent to smpp client
+    # since user id is none.
     smses = DBSession.query(Sms).filter_by(sms_type='incoming', status='recieved', target_network=None, user_id=None).all()
     if smses:
         for S in smses:
-            sms_to = S.sms_to
-            sms_from = S.sms_from
-            mnp = DBSession.query(Mnp).filter_by(cell_number=sms_to).first()  # querying for mobile number conversion
-            if mnp:
-                target_network = mnp.target_network
-                S.sms_type = 'outgoing'
-                S.status = 'scheduled'
-                S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
+            sms_to = S.sms_to  # Get the destination
+            sms_from = S.sms_from  # Set the sender
+            mnp = DBSession.query(Mnp).filter_by(cell_number=sms_to).first()  # Querying for converted mobile numbers.
+            if mnp: #  If destination is some no. from mnp table
+                target_network = mnp.target_network  # Get the target number into a variable.
+                S.sms_type = 'outgoing'  # Set the sms type in database as outgoing because now it would be sent to the destination.
+                S.status = 'scheduled'  # Set status in database as scheduled.  
+                S.validity_period = datetime.date.today()+datetime.timedelta(days=1)  # Set validity period of 1 day.
             else:
-                source_prefix = sms_from[0:6]  # extract prefix of sender number
-                dest_prefix = sms_to[0:6]  # extract prefix of recipient
-                s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
-                source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
-                d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
-                dest_network = d_network.network   # refers to recipient network
-                user = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()  # user refers to normal user
-                if user:
+                source_prefix = sms_from[0:6]  # Extract prefix of sender number.
+                dest_prefix = sms_to[0:6]  # Extract prefix of recipient.
+                s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()  # Query the database in prefix match table  to find the source network.
+                source_network = s_network.network  # Refers to sender network.
+                d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()  # Query the database in prefix match table  to find the destination network.
+                dest_network = d_network.network   # Refers to recipient network.
+                user = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()  # User refers to normal user.
+                if user:  # If user is a client
                     S.user_id = user.user_id
                     target_network = None
-                else:
+                else:  # If destination is of the same network
                     target_network = dest_network
                     S.sms_type = 'outgoing'
                     S.status = 'scheduled'
                     S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
-            S.target_network = target_network
-            if target_network != source_network:
-                connect_info(sms_to, S.msg, dest_network, S.id, sms_from)
-                #sms_ids = sms_ids + str(S.id) + '\n'
-        #return sms_ids
+            S.target_network = target_network  # Set the target network in database.
+            if target_network != source_network:  # If source and destination network are different
+                connect_info(sms_to, S.msg, dest_network, S.id, sms_from)  # Call connection info method.
 
 
 def updating_status(sms_ids):
@@ -194,12 +195,12 @@ def commit_db():
 
 def connect_info(recipient, message, dest_network, sms_id, sender_number):
     """
-    This method is responsible to get connection paramters from database to communicate with destination network
+    This method is responsible to get sms fields and connection parameters from process incoming sms method to communicate with destination network
     server in case when sender sends a message to some other network.
     """
 
     # here we have to make client object
-    server = DBSession.query(Network).filter_by(network=dest_network).first()
+    server = DBSession.query(Network).filter_by(network=dest_network).first()  # Query the Network table to get the ip and port of other smpp server.
     if server:
         system_id = server.username
         password = server.password
@@ -207,29 +208,31 @@ def connect_info(recipient, message, dest_network, sms_id, sender_number):
         ip = server.ip
         port = server.port
 
+        # Background thread3 is responible to send sms to the other server.
         background_thread3 = threading.Thread(target=connect_to_server,
                                               args=(ip, port, system_id, password, system_type, recipient, message,
                                                     sms_id, sender_number))
-        background_thread3.start()
-        background_thread3.join()
+        background_thread3.start() # Start the thread
+        background_thread3.join()  # Join thread so that when all threads will finish their work then the process will terminate.
 
 
 def connect_to_server(ip, port, system_id, password, system_type, recipient, message, sms_id, sender_number):
     """
-    This method is responsible to create client instance to communicate with destination network server as client.
+    In this method server creates client instance to communicate with the destination network server,
+    current server will connect with other server as client.
     """
 
-    client = SMPPClient(ip, port, 'TX', system_id, password, system_type)
+    client = SMPPClient(ip, port, 'TX', system_id, password, system_type)  # Creates client instance,connect with other server via these paramaters this server will bind with nother server as transmitter.
     connection = False
     notification = 0
-    while connection is False:   # while connection is not established with server, try to connect.
-        if client.connect():
-            connection = True
-            # this thread is checking the socket for getting responses from other server and save in dictionary.
-            background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # to recieve pdu response from other smpp server to whom it has sent the request.
-            background_thread4.start()
+    while connection is False:   # While connection is not established with server, try to connect.
+        if client.connect():  # Call the connect method of client class.
+            connection = True  
+            # This thread is checking the socket for receiving responses from other server and saves in the dictionary.
+            background_thread4 = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # To recieve pdu response from other smpp server to whom it has sent the request.
+            background_thread4.start()  # Start the thread
 
-    if client.login():  # if client successfully logins
+    if client.login():  # If client successfully logins
         client.session.send_sms(recipient, message, sender_number)
         while notification == 0:
             notification = client.session.notifications_4_client()
@@ -314,7 +317,7 @@ class SMPPServer(object):
         try:
             while True:
                 self.socket.listen(1)  # listening for connections
-                print("Ufone server listening......")
+                print("ZONG server listening......")
                 conn, addr = self.socket.accept()  # accept connections and return ip and port
                 sc = SharedConnection(conn)
                 sc.is_open = True
@@ -440,5 +443,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('192.168.5.35', 1337)
+    S.start_serving('127.0.0.1', 1337)
 
