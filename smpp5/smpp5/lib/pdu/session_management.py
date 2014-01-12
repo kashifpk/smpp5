@@ -29,7 +29,7 @@ class BindTransmitter(PDU):
     interface_version = Integer(IV.SMPP_VERSION_5, 1)  # Indicates the version of the SMPP protocol supported by the ESME.
     addr_ton = Integer(TON.INTERNATIONAL, 1)  # Indicates Type of Number of the ESME address. If not known set to NULL.
     addr_npi = Integer(NPI.ISDN, 1)  # Numbering Plan Indicator for ESME address. If not known set to NULL.
-    address_range = CString('')      # Numbering Plan Indicator for ESME address. If not known set to NULL.
+    address_range = CString('')      # Specifies a set of SME addresses serviced by the ESME client. 
 
 
 class BindTransmitterResp(PDU):
