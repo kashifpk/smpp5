@@ -82,7 +82,7 @@ class SubmitMulti(PDU):
     schedule_delivery_time = CString("")
     validity_period = CString("")
     registered_delievery = Integer(0, 1)     # page 130
-    replace_if_present_flag = Integer(0, 1)  # page 131
+    replace_if_present_flag = Integer(1, 1)  # page 131
     data_coding = Integer(0, 1)              # page 123
     sm_default_msg_id = Integer(0, 1)        # page 134
     sm_length = Integer(0, 1)                # page 134

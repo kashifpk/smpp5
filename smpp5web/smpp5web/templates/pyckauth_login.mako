@@ -7,7 +7,7 @@ smpp5web - Login
 <%def name="header()">
   <div id="top" style="text-align: center">
     <br /><br />
-    <img src="${request.static_url('smpp5web:static/pyck-admin.png')}"  alt="pyck"/>
+    <img src="${request.static_url('smpp5web:static/smpp.png')}"  alt="pyck"/>
   </div>
 </%def>
 

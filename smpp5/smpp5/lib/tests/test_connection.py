@@ -1,16 +1,21 @@
 from smpp5.client.smpp_client import SMPPClient
 import unittest
+import time
+import threading
 
 
 class Test(unittest.TestCase):
     def setUp(self):
-        self.client = SMPPClient('127.0.0.1', 1337, 'TX',
+        self.client = SMPPClient('127.0.0.6', 1337, 'TX',
                                  'ASMA', 'secret08', 'SUBMIT1')
         self.client.connect()
+        self.background_thread = threading.Thread(target=self.client.session.storing_recieved_pdus, args=())
+        self.background_thread.start()
         self.client.login()
 
     def tearDown(self):
         self.client.session.unbind()
+        self.background_thread.join()
 
     def test_01_connection(self):
         assert self.client.connect() is True
@@ -20,7 +25,7 @@ class Test(unittest.TestCase):
         assert self.client.login() is True
 
     def test_03_login2(self):
-        client = SMPPClient('127.0.0.1', 1337, 'TX',
+        client = SMPPClient('127.0.0.6', 1337, 'TX',
                             'ASMA', 'secret09', 'SUBMIT1')
         client.connect()
 
@@ -33,6 +38,8 @@ class Test(unittest.TestCase):
     def test_05_sendsms(self):
 
         assert self.client.session.send_sms('+923005381993', 'hello') is None
+        time.sleep(1)
+        client.session.processing_recieved_pdus()
 
     def test_06_querysms(self):
 

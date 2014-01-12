@@ -2,7 +2,7 @@
 
 
 <div>
-<h1>smpp5web - Authentication Manager - Users</h1>
+<br /><br /><br />
 
 %if "edit"==action:
 <form action="${request.current_route_url()}?action=edit&id=${user.user_id}" method="post">
@@ -83,6 +83,8 @@
     %endfor
 </table>
 
-
+<br />
+    <a href= ${request.route_url('admin_page')}><p><center>BACK</center></p></a>
+   <br /><br /><br />
 </div>
 

@@ -36,15 +36,17 @@ class Sms(Base):
     sms_to = Column(Unicode(40))
     schedule_delivery_time = Column(DateTime)
     validity_period = Column(DateTime)
-    msg = Column(Unicode(100))
+    msg = Column(Unicode(500))
     timestamp = Column(DateTime)
     status = Column(Unicode(40))
     user_id = Column(Unicode(100), ForeignKey(User.user_id))
     package_name = Column(Unicode(50), ForeignKey(Packages.package_name))
     rates = Column(Float)
+    target_network = Column(Unicode(100))
+    client_type = Column(Unicode(30))
 
     def __init__(self, sms_type=None, sms_from=None, sms_to=None, schedule_delivery_time=None, validity_period=None,
-                 msg=None, timestamp=None, status=None, user_id=None, package_name=None, rates=None):
+                 msg=None, timestamp=None, status=None, user_id=None, package_name=None, rates=None, target_network=None, client_type=None):
         self.sms_type = sms_type
         self.sms_from = sms_from
         self.sms_to = sms_to
@@ -56,6 +58,8 @@ class Sms(Base):
         self.user_id = user_id
         self.package_name = package_name
         self.rates = rates
+        self.target_network = target_network
+        self.client_type = client_type
 
 
 class User_Number(Base):
@@ -72,12 +76,43 @@ class User_Number(Base):
 class Prefix_Match(Base):
     __tablename__ = 'prefix_match'
 
-    prefix = Column(Unicode(4), primary_key=True)
-    user_id = Column(Unicode(100), ForeignKey(User.user_id))
+    prefix = Column(Unicode(10), primary_key=True)
+    network = Column(Unicode(100))
 
-    def __init__(self, prefix=None, user_id=None):
+    def __init__(self, prefix=None, network=None):
         self.prefix = prefix
-        self.user_id = user_id
+        self.network = network
+
+
+class Network(Base):
+    __tablename__ = 'network'
+    
+    id = Column(Integer, primary_key=True)
+    network = Column(Unicode(100))
+    username = Column(Unicode(100))
+    password = Column(Unicode(100))
+    system_type = Column(Unicode(100))
+    ip = Column(Unicode(100))
+    port = Column(Integer)
+
+    def __init__(self, network=None, username=None, password=None, system_type=None, ip=None, port=None):
+        self.network = network
+        self.username = username
+        self.password = password
+        self.system_type = system_type
+        self.ip = ip
+        self.port = port
+
+
+class Mnp(Base):
+    __tablename__ = 'mnp'
+
+    cell_number = Column(Unicode(40), primary_key=True)
+    target_network = Column(Unicode(100))
+
+    def __init__(self, cell_number=None, target_network=None):
+        self.cell_number = cell_number
+        self.target_network = target_network
 
 
 class Selected_package(Base):

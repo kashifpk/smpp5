@@ -1,14 +1,17 @@
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 import datetime
-
+from time import strptime
 from ..models import (
-    DBSession, Sms, User_Number, Prefix_Match, Packages, Selected_package)
-
+    DBSession, Sms, User_Number, Prefix_Match, Packages, Selected_package, Network, Mnp)
+import hashlib
 from ..auth import (User)
 
 
 from ..forms import ContactForm
+from ..forms import LoginForm, UserForm, PermissionForm, RoutePermissionForm
+from ..models import DBSession, Permission, User, UserPermission, RoutePermission
+
 from sqlalchemy import func
 
 
@@ -38,33 +41,31 @@ def say(request):
     if "POST" == request.method:
         sms_body = request.POST['body']
         sms_to = sms_body.splitlines()[0]
-        sms_from = request.POST['address']
-        message = sms_body.splitlines()[1]
+        if not sms_to.startswith('+'):
+            sms_to = '+92' + sms_to[1:]
+        sms_from = sms_body.splitlines()[1]
+        if not sms_from.startswith('+'):
+            sms_from = '+92' + sms_from[1:]
+        try:
+            message = sms_body.splitlines()[2]
+        except:
+            message = ''
         #Making Instance of Sms and Saving values in db
         S = Sms()
         S.sms_type = 'incoming'
         S.sms_from = sms_from
         S.sms_to = sms_to
         S.status = 'recieved'
-        S.schedule_delivery_time = None
+        S.schedule_delivery_time = datetime.date.today()
         S.validity_period = None
         S.msg = message
-        user_number = DBSession.query(User_Number).filter_by(cell_number=sms_to).first()
-        # if number in sms_to is not present in user_number table then find number in telecom table
-        if(user_number is None):
-            prefix = '0'+sms_to[3:6]
-            telecom_number = DBSession.query(Prefix_Match).filter_by(prefix=prefix).first()
-            if(telecom_number is not None):
-                users = DBSession.query(User).filter_by(user_id=telecom_number.user_id).first()
-                if(users.bind_account_type == 'telecom'):
-                    S.user_id = telecom_number.user_id
-        else:
-            S.user_id = user_number.user_id
+        S.user_id = None
         S.timestamp = datetime.datetime.now()
-        S.status = 'pending'
         S.msg_type = 'text'
-        if(user_number or telecom_number is not None):
-            DBSession.add(S)
+        S.rates = 0.0
+        S.target_network = None
+        S.client_type = 'mobile'
+        DBSession.add(S)
         return{}
 
 
@@ -77,8 +78,18 @@ def mainpage(request):
 @view_config(route_name='sms_history', renderer='sms_history.mako')
 def sms_history(request):
     user = request.session['logged_in_user']
+    if "POST" == request.method:
+        user = request.POST['user_id']
     smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
     return{'smses': smses}
+
+
+@view_config(route_name='sms_history_admin', renderer='sms_history_admin.mako')
+def admin_sms_history(request):
+    if "POST" == request.method:
+        user = request.POST['user_id']
+        smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
+        return{'smses': smses}
 
 
 @view_config(route_name='billing', renderer='billing.mako')
@@ -99,51 +110,12 @@ def billing(request):
     return{'smses': smses, 'package_rates': package_rates, 'smses_rates': smses_rates, 'total_bill': total_bill}
 
 
-@view_config(route_name='weeklygraphs', renderer='graphs.mako')
-def weeklygraph(request):
-    user = request.session['logged_in_user']
-    sms = []
-    date = []
-    todaydate = datetime.date.today()
-    previousdate = todaydate-datetime.timedelta(days=7)
-    smses = DBSession.query(Sms.timestamp,
-                            func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA',
-                                                                                        sms_type='outgoing', status='delivered').filter(Sms.timestamp >= previousdate).all()
-    for row in range(len(smses)):
-        for col in range(len(smses[row])):
-            if col == 1:
-                sms.append(smses[row][col])
-            else:
-                date.append(smses[row][col].strftime("%Y-%m-%d"))
-
-    return{'sms': sms, 'date': date, 'name': 'Week', 'traffic': 'Weekly'}
-
-
-@view_config(route_name='monthlygraphs', renderer='graphs.mako')
-def monthlygraph(request):
-    user = request.session['logged_in_user']
-    sms = []
-    date = []
-    todaydate = datetime.date.today()
-    currentmonth = todaydate.month
-    month_name = todaydate.strftime('%B')
-    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
-    for row in range(len(smses)):
-        for col in range(len(smses[row])):
-            if col == 1:
-                sms.append(smses[row][col])
-            else:
-                date.append(smses[row][col].strftime("%Y-%m-%d"))
-
-    return{'sms': sms, 'date': date, 'name': month_name, 'traffic': 'Monthly'}
-
-
 @view_config(route_name='dailygraphs', renderer='graphs.mako')
 def dailygraph(request):
     user = request.session['logged_in_user']
     sms = []
     date = []
-    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id='ASMA', sms_type='outgoing', status='delivered').all()
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user, sms_type='outgoing', status='delivered').all()
     for row in range(len(smses)):
         for col in range(len(smses[row])):
             if col == 1:
@@ -154,23 +126,103 @@ def dailygraph(request):
     return{'sms': sms, 'date': date, 'name': '', 'traffic': 'Daily'}
 
 
+@view_config(route_name='weeklygraphs', renderer='graphs.mako')
+def weeklygraph(request):
+    user = request.session['logged_in_user']
+    sms = []
+    date = []
+    todaydate = datetime.date.today()
+    previousdate = todaydate-datetime.timedelta(days=7)
+    smses = DBSession.query(Sms.timestamp,
+                            func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user,
+                                                                                        sms_type='outgoing', status='delivered').filter(Sms.timestamp >= previousdate).all()
+    for row in range(len(smses)):
+        for col in range(len(smses[row])):
+            if col == 1:
+                sms.append(smses[row][col])
+            else:
+                date.append(smses[row][col].strftime("%Y-%m-%d"))
+
+    return{'sms': sms, 'date': date, 'name': '', 'traffic': 'Weekly'}
+
+
+@view_config(route_name='monthlygraphs', renderer='graphs.mako')
+def monthlygraph(request):
+    user = request.session['logged_in_user']
+    sms = []
+    date = []
+    todaydate = datetime.date.today()
+    currentmonth = todaydate.month
+    month_name = todaydate.strftime('%B')
+    smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(user_id=user, sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
+    for row in range(len(smses)):
+        for col in range(len(smses[row])):
+            if col == 1:
+                sms.append(smses[row][col])
+            else:
+                date.append(smses[row][col].strftime("%Y-%m-%d"))
+
+    return{'sms': sms, 'date': date, 'name': month_name, 'traffic': 'Monthly'}
+
+
+@view_config(route_name='usermonthlygraphs', renderer='usergraphs.mako')
+def usermonthlygraph(request):
+    if "POST" == request.method:
+        month = request.POST['month']
+        sms = []
+        date = []
+        currentmonth = strptime(month[0:3], '%b').tm_mon
+        month_name = request.POST['month']
+        smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
+        for row in range(len(smses)):
+            for col in range(len(smses[row])):
+                if col == 1:
+                    sms.append(smses[row][col])
+                else:
+                    date.append(smses[row][col].strftime("%Y-%m-%d"))
+
+        return{'sms': sms, 'date': date, 'name': month, 'traffic': 'Monthly'}
+
+
+@view_config(route_name='useryearlygraphs', renderer='usergraphs.mako')
+def useryearlygraph(request):
+    if "POST" == request.method:
+        year = request.POST['year']
+        sms = []
+        date = []
+        todaydate = datetime.date.today()
+        smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(sms_type='outgoing', status='delivered').filter(func.YEAR(Sms.timestamp) == year).all()
+        for row in range(len(smses)):
+            for col in range(len(smses[row])):
+                if col == 1:
+                    sms.append(smses[row][col])
+                else:
+                    date.append(smses[row][col].strftime("%Y-%m-%d"))
+
+        return{'sms': sms, 'date': date, 'name': year, 'traffic': 'Yearly'}
+
+
 @view_config(route_name='packages', renderer='packages.mako')
 def packages(request):
     user = request.session['logged_in_user']
     total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user).count()
     if(total_selected_package > 0):
         selected_package = DBSession.query(Selected_package).filter_by(user_id=user)[-1]
-        end_date = selected_package.end_date.strftime('%d')
-        end_month = selected_package.end_date.strftime('%m')
+        end_date = int(selected_package.end_date.strftime('%d'))
+        end_month = int(selected_package.end_date.strftime('%m'))
+        end_year = int(selected_package.end_date.strftime('%y'))
     else:
         selected_package = None
         end_date = None
         end_month = None
+        end_month = None
+        end_year = None
     date = datetime.datetime.now()
-    today_date = date.strftime('%d')
-    today_month = date.strftime('%m')
+    today_date = int(date.strftime('%d'))
+    today_month = int(date.strftime('%m'))
+    today_year = int(date.strftime('%y'))
     return{'selected_package': selected_package, 'today_date': today_date, 'today_month': today_month,
-           'end_date': end_date, 'end_month': end_month}
+           'today_year': today_year, 'end_date': end_date, 'end_month': end_month,  'end_year': end_year}
 
 
 @view_config(route_name='select_packages', renderer='select_packages.mako')
@@ -195,5 +247,75 @@ def select_packages(request):
 
     packages = DBSession.query(Packages).all()
     return{'packages': packages}
+
+
+@view_config(route_name='admin_page', renderer='admin_page.mako')
+def adminpage(request):
+    return{}
+
+
+@view_config(route_name='reset_password', renderer='reset_password.mako')
+def reset_password(request):
+    action = request.GET.get('action', 'add')
+    user = request.session['logged_in_user']
+    U = None
+
+    if 'edit' == action:
+        U = DBSession.query(User).filter_by(user_id=request.GET['id']).first()
+
+    f = UserForm(request.POST, U)
+
+    if 'POST' == request.method:
+        if f.validate():
+            if 'add' == action:
+                U = User()
+                f.populate_obj(U)
+                U.password = hashlib.sha1(f.password.data).hexdigest()
+                DBSession.add(U)
+
+                # Add user permissions here.
+                for key in request.POST.keys():
+                    if key.startswith('chk_perm_'):
+                        permission = request.POST[key]
+                        UP = UserPermission(f.user_id.data, permission)
+                        DBSession.add(UP)
+
+                request.session.flash("User created!")
+                return HTTPFound(location=request.current_route_url())
+
+            elif 'edit' == action:
+                DBSession.query(UserPermission).filter_by(user_id=request.GET['id']).delete()
+                for key in request.POST.keys():
+                    if key.startswith('chk_perm_'):
+                        permission = request.POST[key]
+                        UP = UserPermission(f.user_id.data, permission)
+                        DBSession.add(UP)
+
+                f.populate_obj(U)
+                U.password = hashlib.sha1(f.password.data).hexdigest()
+                request.session.flash("User updated!")
+                return HTTPFound(location=request.route_url('main_page'))
+
+    permissions = DBSession.query(Permission).order_by('permission')
+    users = DBSession.query(User).order_by('user_id').filter_by(user_id=user)
+
+    return dict(action=action, user_form=f, users=users, user=U)
+
+
+@view_config(route_name='display_users', renderer='display_users.mako')
+def display_users(request):
+    users = DBSession.query(User).order_by('user_id')
+    months_choices = []
+    months = []
+    years = []
+    for i in range(1, 13):
+        months_choices.append((i, datetime.date(2008, i, 1).strftime('%B')))
+    for m in months_choices:
+        months.append(m[1])
+    for y in range(1995, datetime.datetime.now().year + 1):
+        years.append(y)
+    return{'users': users, 'months': months, 'years': years}
+
+
 
 

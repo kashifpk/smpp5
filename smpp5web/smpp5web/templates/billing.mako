@@ -45,42 +45,39 @@
 	border-bottom: 1px solid #d6dfff;
         }
 p {color:#369;}
+.billings { height: 16em; overflow: auto; }
+
 </style>
 </head>
    <body>
-   <h1><font color = "#039">&nbsp&nbsp&nbspSms Bills</h1></ font>
+   <h1><font color = "#039">&nbsp&nbsp&nbspSms Bills</h1></font>
    <br />
-   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
+   <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"> </div><br /><br />
+   <div class = "billings">
    
    <table id="billing">
     <colgroup>
     	<col class="billing-odd" />
     	<col class="billing-even" />
     	<col class="billing-odd" />
-        <col class="billing-even" />
-        <col class="billing-odd" />
     </colgroup>
     <thead>
     	<tr>
-            <th scope="col" id="billing-1">USER NUMBER</th>
-            <th scope="col" id="billing-2">MESSAGE</th>
-            <th scope="col" id="billing-3">SMS TO</th>
-            <th scope="col" id="billing-4">DELIVERY DATE</th>
-            <th scope="col" id="billing-5">RATES</th>
+            <th scope="col" id="billing-1">SMS TO</th>
+            <th scope="col" id="billing-2">DELIVERY DATE</th>
+            <th scope="col" id="billing-3">RATES</th>
         </tr>
     </thead>
    <tbody>
    % for s in smses:
      <tr>
-       <td>${s.sms_from}</td>
-       <td>${s.msg}</td>
        <td>${s.sms_to}</td>
        <td>${s.timestamp}</td>
        <td>${s.rates}</td>
      </tr>
      </tbody>
    % endfor
-   </table>
+   </table></div>
    <br /><br /><br />
    <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
    <table id="billing">
@@ -88,8 +85,6 @@ p {color:#369;}
     	<col class="billing-odd" />
     	<col class="billing-even" />
     	<col class="billing-odd" />
-        <col class="billing-even" />
-        <col class="billing-odd" />
     </colgroup>
     <thead>
     	<tr>

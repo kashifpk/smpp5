@@ -191,7 +191,12 @@ def login(request):
 
             if request.session.get('came_from', None):
                 return HTTPFound(location=request.session.get('came_from'))
-            else:
+            elif request.session['logged_in_user'] == 'admin' :
+                try:
+                    return HTTPFound(location=request.route_url('admin_page'))
+                except Exception:
+                    return HTTPFound(location=request.route_url('home'))
+	    else:
                 try:
                     return HTTPFound(location=request.route_url('main_page'))
                 except Exception:

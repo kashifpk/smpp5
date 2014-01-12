@@ -30,7 +30,7 @@
     </script>
     </head>
     <body><br />
-    <h1><font color = "#039">&nbsp&nbsp&nbsp${traffic} Sms Traffic For This ${name}</h1></ font>
+    <h1><font color = "#039">&nbsp&nbsp&nbsp${traffic} Sms Traffic     ${name}</h1></ font>
     <br />
     <div style="font-family:verdana;border-radius:4px;height:5px;background-color:#c8d4fd"></ div><br /><br />
     <div id="chartOne" style="width: 400px; height: 240px; margin: 10px auto 0px auto;"></div>

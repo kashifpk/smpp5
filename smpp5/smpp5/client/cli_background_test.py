@@ -3,9 +3,9 @@ import threading
 
 def client_thread(session, connection):
     if session is '':
-        print("oh no")
+        print("Oops, There seems a disconnection from session")
     else:
-        print("atleat yeh tou chala")
+        print("Yes it works!")
         background_thread = threading.Thread(target=thread, args=(session, connection))
         background_thread.start()
 

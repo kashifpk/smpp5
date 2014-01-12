@@ -37,7 +37,7 @@ from smpp5web.auth import is_allowed
 </body>
 </html>
 
-<%def name="title()">The PyCK Web Application Development Framework</%def>
+<%def name="title()">SMPP V5.0 Web Interface</%def>
 
 <%def name="meta()">
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
@@ -51,7 +51,7 @@ from smpp5web.auth import is_allowed
 </%def>
 <%def name="header()">
   <div id="top-small">
-    <img src="${request.static_url('smpp5web:static/pyck-small.png')}"  alt="pyck"/>
+    <center> <img src="${request.static_url('smpp5web:static/smpp.png')}"  alt="pyck"/></center>
     ${self.main_menu()}
   </div>
 </%def>
@@ -79,11 +79,16 @@ from smpp5web.auth import is_allowed
   %endif
   
   %if is_allowed(request, 'admin.admin_index'):
-  <a href="${request.route_url('admin.admin_index')}">Admin Section</a> |
+      %if request.session.get('logged_in_user', None) == 'admin':
+          <a href="${request.route_url('admin.admin_index')}">Admin Section</a> |
+      %endif
   %endif
   
   %if request.session.get('logged_in_user', None):
-  <a href="${request.route_url('pyckauth_logout')}">Logout</a>
+      <a href="${request.route_url('pyckauth_logout')}">Logout</a> |
+      %if request.session.get('logged_in_user', None) != 'admin':
+          <a href="${request.route_url('reset_password')}">Reset Password</a>
+      %endif
   %else:
   <a href="${request.route_url('pyckauth_login')}">Login</a>
   %endif
@@ -92,7 +97,7 @@ from smpp5web.auth import is_allowed
 </%def>
 <%def name="footer()">
   <div id="footer">
-    <div class="footer">&copy; Copyright 2008-2012, Set your company name here</div>
+    <div class="footer">&copy; Smpp v5.0, Asma Mahmood Abbasi & Komal Khalid </div>
   </div>
 </%def>
 

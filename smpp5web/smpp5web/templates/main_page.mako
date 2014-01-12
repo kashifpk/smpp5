@@ -17,7 +17,7 @@
     </head>
     <body>
     <%def name="title()">Welcome</%def>
-    <br />
+   
     
     <div><h1><font color="#039">Welcome To Customer Self Care</ font></ h1></div><br />
     Dear ${user},<br /><br />
@@ -30,18 +30,18 @@
     <font color="#039" size="2">BILLING SERVICES:</ font>
     </div>
     <div><br />&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-    <a href= ${request.route_url('billing')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/pencil.jpeg')}"  alt="pyck" width="42" height="42"/></ a>
+    <a href= ${request.route_url('billing')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/pencil.jpeg')}"  alt="pyck" width="42" height="42"/></a>
     </ div><br /><br />
     <div style="font-family:verdana;position:absolute;left:10px;padding:5px;width:130px;border-radius:3px;border:5px solid #c8d4fd">
-    <font color="#039" size="2">Transactions details</ font>
+    <font color="#039" size="2"><center>Transactions details</center></font>
     </div>
-    <br /><br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br />
     <div style="font-family:verdana;border-radius:0px;solid #c8d4fd; background-color:#c8d4fd">
     <font color="#039" size="2">PACKAGE SERVICES:</ font>
     </div>
-    
-    <div><br />&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-    <a href = ${request.route_url('packages')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/notes.jpg')}"  alt="pyck" width="42" height="42"/></ a>
+    <br />
+    <div>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+    <a href = ${request.route_url('packages')}><img onmouseover="bigImg(this)" onmouseout="normalImg(this)" border="0" src="${request.static_url('smpp5web:static/notes.jpg')}"  alt="pyck" width="42" height="42"/></a>
     &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
     &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
     &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
@@ -55,17 +55,17 @@
     <br /><br />
     
     <div style="font-family:verdana;position:absolute;left:10px;padding:5px;width:130px;border-radius:3px;border:5px solid #c8d4fd">
-    <font color="#039" size="3">Package Details</ font>
+    <font color="#039" size="3"><center>Package Details</center></font>
     </div>
     <div style="font-family:verdana;position:absolute;left:300px;padding:5px;width:130px;border-radius:3px;border:5px solid #c8d4fd">
-    <font color="#039" size="3">Sms History</ font>
+    <font color="#039" size="3"><center>Sms History</center></font>
     </div>
     <div style="font-family:verdana;position:absolute;left:550px;padding:5px;width:130px;border-radius:3px;border:5px solid #c8d4fd">
-    <font color="#039" size="3">Select Package</ font>
+    <font color="#039" size="3"><center>Select Package</center></font>
     </div>
     
     
-    <br /><br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br />
     
     
     
