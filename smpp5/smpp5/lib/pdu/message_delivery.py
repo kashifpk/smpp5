@@ -5,7 +5,7 @@ from smpp5.lib.constants import NPI, TON, esm_class, command_ids, command_status
 
 
 class DeliverSm(PDU):
-    "Deliver Short Message "
+    "Deliver Short Message PDU Type"
 
     command_id = Integer(command_ids.deliver_sm, 4)
     service_type = CString("")

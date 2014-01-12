@@ -1,3 +1,4 @@
+'''This module creates the engine and bind our database with that engine'''
 from sqlalchemy import create_engine
 from models import DBSession
 

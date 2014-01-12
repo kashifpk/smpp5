@@ -113,7 +113,9 @@ class SMPPSession(object):
         self.smses = {}
 
     def _can_do(self, action):
-        "Validates if an action can be performed in current session state or not"
+        
+        "Validates if an action can be performed in current session state or not."
+        
         if self.state in self.allowed_actions[action]:
             return True
         else:
@@ -129,15 +131,17 @@ class SMPPSession(object):
 
     def process_request(self):
         """
-        Server background thread use this method to receive requests or response pdus send by client over socket
+        Server background thread uses this method to receive requests or response pdus sent by client over the socket.
         """
 
         while self.socket.is_open is True:
             P = self.socket.get_pdu_from_socket()
             if P is not None:
+                # If command id sent by client is that of deliever sms response pass it.
                 if(P.command_id.value == command_ids.deliver_sm_resp):
                     pass
                 else:
+                    # Updates the dictionary and add request pdu sent by the client and it works like a queue.
                     self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
 
     def handle_pdu(self):
@@ -602,32 +606,39 @@ class SMPPSession(object):
 
     def deliver_sms(self):
         """
-        This method is used by server to deliver the smses if any to currently logged in client.
+        This method is used by server to deliver the incoming smses if any to currently logged in client.
         """
 
         try:
+            # Checks if action is not allowed in current bind state.
             if not self._can_do('deliver_sm'):
-                raise InvalidSessionState("Sorry, Client terminates the connection")
+                raise InvalidSessionState("Oops! Client has terminated the connection.")
         except InvalidSessionState as e:
             print(e.value)
-        sms = self.sever_fetch_sms(self.user_id)
-        if(sms is None):
+            
+        # Pass currently logged-in user id to to fetch incoming sms method in server which checks the database for incoming smses
+        # and return them here.
+        sms = self.sever_fetch_sms(self.user_id)  
+        if(sms is None):  # If there are no incoming smses for the client pass
             pass
-        else:
-            msg_length = int(len(sms.msg))
-            P = DeliverSm()
-            P.sequence_number = Integer(self._next_seq_num(), 4)
-            P.source_addr = CString(str(sms.sms_from))
-            P.destination_addr = CString(str(sms.sms_to))
-            P.schedule_delivery_time = CString(str(sms.schedule_delivery_time))
-            P.validity_period = CString("")
-            if(msg_length < 255):
-                P.sm_length = Integer(msg_length, 1)                # page 134
-                P.short_message = CString(str(sms.msg))
+        else:  # If there are incoming smses for the client
+            msg_length = int(len(sms.msg))  # Take the message length and convert it into integer.
+            P = DeliverSm()  # Make the class instance.
+            
+            # Set the class fields to compose the pdu.
+            P.sequence_number = Integer(self._next_seq_num(), 4)  # Set the sequence number of the pdu.
+            P.source_addr = CString(str(sms.sms_from))  # Server address
+            P.destination_addr = CString(str(sms.sms_to))  # Client address
+            P.schedule_delivery_time = CString(str(sms.schedule_delivery_time))  # By default its current time.
+            P.validity_period = CString("")  # By default its 1 day
+            if(msg_length < 5000):
+                P.sm_length = Integer(msg_length, 1)  # Convert length into integer which is the desired type
+                P.short_message = CString(str(sms.msg))  # Convert message body to string and then to Cstring format
             else:
                 P.message_payload = TLV(tlv_tag.message_payload, message)
-            data = P.encode()
-            self.socket.send(data)
+            data = P.encode()  # Encode the pdu
+            self.socket.send(data)  # Send the pdu to the socket.
+            # Call gets back to deliver sms method in server.
 
     def deliver_sms_response(self, P):
         """

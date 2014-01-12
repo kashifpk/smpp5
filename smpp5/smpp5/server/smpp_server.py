@@ -22,63 +22,66 @@ from smpp5.client.smpp_client import SMPPClient
 
 def handle_client_connection(conn, addr):
     """
-    This method is responsible to Handle a client connection and creating two background threads...One for handling
+    This method is responsible to handle a client connection and creating two background threads...One for handling
     client request pdus and other for delivering smses to client..
     """
 
     print("Accepted connection from: " + repr(addr))
-    server_session = SMPPSession('server', conn)
-    server_session.server_db_store = SMPPServer.db_storage
-    server_session.server_validate_method = SMPPServer.validate
+    server_session = SMPPSession('server', conn)  # SMPPSession class object has been created.
+    
+    # To use server class variable values in session module, return values have been passed.
+    server_session.server_db_store = SMPPServer.db_storage  # sms_ids have been passed to variable in SMPP Session.
+    server_session.server_validate_method = SMPPServer.validate 
     server_session.server_query_result = SMPPServer.query_result
     server_session.server_cancel_result = SMPPServer.cancel_result
     server_session.server_replace_result = SMPPServer.replace_result
     server_session.sever_fetch_sms = fetch_incoming_sms
     server_session.commit_db = commit_db
 
-    # background thread 1 to handle clients request pdus by recieving them from socket and storing them in dictionary
+    # Background thread 1 is to handle client request pdus by recieving them from socket and storing them in dictionary.
     background_thread = threading.Thread(target=handle_client_requests, args=(server_session, conn))
     background_thread.start()
 
-    # background thread 2 to check database for messages after every 5secs and deliever smses to client if any
-
+    # Background thread 2 to check database for incoming messages every 5secs and deliever smses to client if any.
     background_thread2 = threading.Thread(target=deliver_sms, args=(server_session, conn))
     background_thread2.start()
 
-    # background thread 3 to process incoming smses after login
-    # current thread for receiving responses from client and storing them in dict
+    # Main/ Parent thread is responsible for receiving deliver sms requests and all pdu responses from client and storing them in dict.
     while server_session.state != SessionState.UNBOUND:
         server_session.handle_pdu()
 
     conn.close()
     #time.sleep(1)
-    background_thread.join()
+    background_thread.join()  # Joining the threads means to terminate them at the point where all the threads have finished their work.
     background_thread2.join()
 
 
 def handle_client_requests(server_session, conn):
     """
-    This method handles client request/response pdus by receiving them from socket and storing them in dictionary
+    This method called by thread handles client request/response pdus by reading them from socket and storing them in dictionary
     till Unbound state.
     """
 
     while conn.is_open is True:
-        server_session.process_request()
+        server_session.process_request()  # Accessing session class method
 
 
 def deliver_sms(server_session, conn):
     """
-    This method checks database for smses every 5 seconds and deliver sms to client if any.
+    This method  called by thread checks database for incoming smses every 5 seconds and deliver sms to the client periodically.
     """
     _thread_lock = None
+    # Thread lock to lock the shared access of data.
     _thread_lock = threading.Lock()
     while conn.is_open is True:
+        # If state is receiver or transceiver
         if server_session.state in [SessionState.BOUND_RX, SessionState.BOUND_TRX]:
+            # Periodically checks for incoming smses.
             time.sleep(5)
-            _thread_lock.acquire()
-            server_session.deliver_sms()
-            transaction.commit()
-            _thread_lock.release()
+            _thread_lock.acquire()  # Acquire the thread lock.
+            server_session.deliver_sms()  # Accessing session class method
+            transaction.commit()  # Changes in sms status has been committed to database.
+            _thread_lock.release()  # Release the thread lock so that shared can be used by any other entity.
 
 
 def fetch_incoming_sms(user_id):
@@ -87,9 +90,10 @@ def fetch_incoming_sms(user_id):
     """
 
     smses = DBSession.query(Sms).filter_by(sms_type='incoming', user_id=user_id, status='recieved').first()
+    # If there are incoming smses for the client.
     if smses:
-        smses.status = 'delivered'
-    return(smses)
+        smses.status = 'delivered'  # Set the status of incoming sms in database as delieverd in place of received.
+    return(smses)  # Return all these incoming pending smses to the deliver sms method in session.
 
 
 def thread_4_incoming_sms():
@@ -202,12 +206,6 @@ def connect_info(recipient, message, dest_network, sms_id, sender_number):
         system_type = server.system_type
         ip = server.ip
         port = server.port
-
-        #system_id = 'KIRAN'
-        #password = 'secret08'
-        #system_type = 'SUBMIT1'
-        #ip = '127.0.0.1'
-        #port = 1338
 
         background_thread3 = threading.Thread(target=connect_to_server,
                                               args=(ip, port, system_id, password, system_type, recipient, message,
