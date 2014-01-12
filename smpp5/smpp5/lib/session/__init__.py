@@ -195,23 +195,24 @@ class SMPPSession(object):
 
     def processing_recieved_pdus(self):
         """
-        Client use this method to process pdus responses by calling appropriate method.
+        Client uses this method to process pdu responses by calling appropriate method.
         """
-        isempty = (self.comp_pdus and True) or False
-        if isempty is not False:
-            seq_no, pdu = self.comp_pdus.popitem()  # first element from dictionary has been popped up and deleted from dict.
-            if pdu['resp'] != '':
-                R = pdu['resp']
-                if(command_ids.generic_nack == R.command_id.value):
-                    if(command_status.ESME_RINVCMDID == R.command_status.value):
-                        print("You have sent invalid PDU which is not recognized by SMSC. ")
-                if(self.state == SessionState.OPEN):
+        isempty = (self.comp_pdus and True) or False  # Check of comp pdu dict is empty or not.
+        if isempty is not False: # If comp pdu dict is not empty.
+            seq_no, pdu = self.comp_pdus.popitem()  # First element from dictionary has been popped up like queue and deleted from dict.It works like first in first out.
+            if pdu['resp'] != '':  # If pdu dict key 'resp' is not empty
+                R = pdu['resp']  # Store that response in R.
+                if(command_ids.generic_nack == R.command_id.value):  # If in response pdu, there is command id of gnack 
+                    if(command_status.ESME_RINVCMDID == R.command_status.value):  # Check the reason for invalidness i-e check the status.
+                        print("You have sent invalid PDU which is not recognized by SMSC. ")  
+                if(self.state == SessionState.OPEN):  # If session state is open
+                    # Check for one of the bind pdu response and call the particular handler for that.
                     if(command_ids.bind_transmitter_resp == R.command_id.value):
-                        self.binding_response_handling(R)
+                        self.bind_response_handling(R)
                     elif(command_ids.bind_receiver_resp == R.command_id.value):
-                        self.binding_response_handling(R)
+                        self.bind_response_handling(R)
                     elif(command_ids.bind_transceiver_resp == R.command_id.value):
-                        self.binding_response_handling(R)
+                        self.bind_response_handling(R)
                 else:
                     if(command_ids.submit_sm_resp == R.command_id.value):
                         self.send_sms_response(R)
@@ -235,12 +236,12 @@ class SMPPSession(object):
 
     def notifications_4_client(self):
         """
-        This method is used by client to view that either there are pending notifications or not..
+        This method is used by the client to view the pending notifications
         """
         notification = 0
-        for seq_no in self.pdus:
-            if self.pdus[seq_no]['read'] == 'false' and self.pdus[seq_no]['resp'] != '':
-                notification = notification+1
+        for seq_no in self.pdus:  # Parsing the dict 
+            if self.pdus[seq_no]['read'] == 'false' and self.pdus[seq_no]['resp'] != '':  # If there are unread messages and resp key is empty.
+                notification = notification+1  # Iterate the notification variable.
         return notification
 
     def bind(self, bind_type, system_id, password, system_type):
@@ -295,12 +296,13 @@ class SMPPSession(object):
                 data = R.encode()
                 self.socket.send(data)
 
-    def binding_response_handling(self, R):
+    def bind_response_handling(self, R):
         """
-        This method is reaponsible to process bind transmitter or receiver or transceiver responses send by server...
+        This method is reponsible to process bind transmitter or receiver or transceiver responses sent by server.
         """
-        if(R.command_status.value == 0):
-            if(R.command_id.value == command_ids.bind_transmitter_resp):
+        if(R.command_status.value == 0):  # Command status is zero means it has no error.
+            # Setting the command status according to bind command id.
+            if(R.command_id.value == command_ids.bind_transmitter_resp): 
                 self.state = SessionState.BOUND_TX
             elif(R.command_id.value == command_ids.bind_receiver_resp):
                 self.state = SessionState.BOUND_RX
@@ -347,14 +349,14 @@ class SMPPSession(object):
             P.validity_period = CString("")  # Define validity period for sms.
             P.sm_default_msg_id = Integer(0, 1)  # Default message id is assigned i-e zero.
             if(msg_length < 5000):
-                P.sm_length = Integer(msg_length, 1)
-                P.short_message = CString(str(message))
+                P.sm_length = Integer(msg_length, 1)  # Take the message length.
+                P.short_message = CString(str(message))  # Store message body.
             else:
                 P.message_payload = TLV(tlv_tag.message_payload, message)
             data = P.encode()
-        #storing pdu in dictionary named responses
+        # Storing the response pdu in dictionary in key resp and set read key as false.
             self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
-            self.socket.send(data)
+            self.socket.send(data)  # Send data to the socket.
         except InvalidSessionState as e:
             print(e.value)
 

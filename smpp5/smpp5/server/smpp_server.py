@@ -235,7 +235,7 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
     if client.login():  # If client successfully logins
         client.session.send_sms(recipient, message, sender_number)
         while notification == 0:
-            notification = client.session.notifications_4_client()
+            notification = client.session.notifications_4_client()  
         client.session.processing_recieved_pdus()
     smses = DBSession.query(Sms).filter_by(id=int(sms_id)).first()
     if smses:
