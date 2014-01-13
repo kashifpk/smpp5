@@ -76,6 +76,7 @@ class SessionState(object):
 
 class SMPPSession(object):
 
+    # Against these states these actions are allowed.
     allowed_actions = {
         'submit_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
         'submit_multi': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
@@ -93,7 +94,7 @@ class SMPPSession(object):
         :param socket: open socket object to use for communication
         """
 
-        assert session_end in ['client', 'server']
+        assert session_end in ['client', 'server']  # Ensuring session end should be either client or server.
         self.session_end = session_end
         self.socket = socket
         self.state = SessionState.OPEN
@@ -146,11 +147,11 @@ class SMPPSession(object):
 
     def handle_pdu(self):
         """
-        This method check for client request and calls appropriate methods to handle it.
+        In this method server checks for client request and calls appropriate methods to handle it.
         """
 
         isempty = (self.pdus and True) or False
-        if isempty is not False:
+        if isempty is not False:  # If pdu dict is not empty
             seq_no, pdu = self.pdus.popitem()
             if pdu['resp'] == '':
                 P = pdu['req']

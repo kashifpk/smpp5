@@ -30,6 +30,7 @@ def handle_client_connection(conn, addr):
     server_session = SMPPSession('server', conn)  # SMPPSession class object has been created.
     
     # Server class has session object so its methods are easily accessible here, return values have been passed.
+    # These variables in session have been assigned methods of server class.so that these variables act as methods in session. 
     server_session.server_db_store = SMPPServer.db_storage  # sms_ids have been passed to variable in SMPP Session.
     server_session.server_validate_method = SMPPServer.validate 
     server_session.server_query_result = SMPPServer.query_result
@@ -143,22 +144,7 @@ def process_incoming_sms():
             S.target_network = target_network  # Set the target network in database.
             if target_network != source_network:  # If source and destination network are different
                 connect_info(sms_to, S.msg, dest_network, S.id, sms_from)  # Call connection info method.
-
-
-def updating_status(sms_ids):
-    """
-    This method updates the status of messages from scheduled to delivered when messages are for server of
-    other network.
-    """
-
-    if sms_ids:
-        sms_ids = sms_ids.splitlines()
-        print(sms_ids)
-        for sms_id in sms_ids:
-            smses = DBSession.query(Sms).filter_by(id=int(sms_id)).first()
-            smses.status = 'delivered'
-        transaction.commit()
-
+                
 
 def process_outgoing_sms(sender, user_id, recipient):
     """
@@ -324,10 +310,10 @@ class SMPPServer(object):
                 sc = SharedConnection(conn)  # Make shared connection class object and pass it the socket object.
                 sc.is_open = True
 
-                P = multiprocessing.Process(target=handle_client_connection, args=(sc, addr))
-                P.start()
+                P = multiprocessing.Process(target=handle_client_connection, args=(sc, addr))  # For every client request a process would be made to handle it.
+                P.start()  # Start the process.
 
-                active_conns = multiprocessing.active_children()
+                active_conns = multiprocessing.active_children()  # Tell count of active clients.
                 print("Active connections: %i" % len(active_conns))
 
         except (KeyboardInterrupt, SystemExit):
@@ -335,7 +321,7 @@ class SMPPServer(object):
 
     def validate(system_id, password, system_type):
         """
-        This method is used by server to validate credentials provided by client against database
+        This method is used by server when it receives the bind tx, rx, trx request it validates the credentials provided by the client against database.
         """
 
         system_id = system_id.decode(encoding='ascii')
@@ -351,18 +337,17 @@ class SMPPServer(object):
 
     def db_storage(recipients, message, user_id, sender):
         """
-        This method is responsible to store Sms and related fields provided by client in database
+        This method is responsible to store Sms and related fields provided by the client in the database.
         """
 
-        sms_ids = ''    # contains all message ids that are sended by client to recipient of same or different network.
-        #smses_ids = ''  # contains only message ids that are sended by client to recipient of some other network.
+        sms_ids = ''    # Contains all message ids that are sent by client to recipient of same or different network.
         sender = sender.decode(encoding='ascii')
-        recipients = recipients.decode(encoding='ascii').splitlines()
+        recipients = recipients.decode(encoding='ascii').splitlines()  # Alist is made.
         selected_package = selected_packages(user_id)
         for recipient in recipients:
-            processed_fields = process_outgoing_sms(sender, user_id, recipient)
+            processed_fields = process_outgoing_sms(sender, user_id, recipient)  # Dict returns in proccessed fields.
 
-        # storing vaues to database
+        # Storing vaues to database
 
             S = Sms()
             S.sms_type = 'outgoing'
@@ -381,18 +366,17 @@ class SMPPServer(object):
             S.client_type = 'smpp'
             DBSession.add(S)
             transaction.commit()
-            sms = DBSession.query(Sms)[-1]  # to send id to the client for ancilliary operations and querying.
-            sms_ids = sms_ids + str(sms.id) + '\n'
+            sms = DBSession.query(Sms)[-1]  # Picks last record to send id to the client for ancilliary operations and querying.
+            sms_ids = sms_ids + str(sms.id) + '\n'  # Server stores all sms ids. Server will notify client about the sms id of the message sent by client.
             if processed_fields['target_network'] != processed_fields['source_network']:  # if destination and source network is different 
                 connect_info(recipient, message, processed_fields['target_network'], sms.id,
                              processed_fields['sender_number'])  # connect to the destination's smpp server.
-                #smses_ids = smses_ids + str(s) + '\n'
-        #updating_status(smses_ids)
+               
         return(sms_ids)
 
     def query_result(message_id, user_id):
         """
-        This method is responsible to query database for provided message id to view the status of Sms
+        This method is responsible to query database for provided message id to view the status of Sms and returns message state.
         """
 
         message_id = int(message_id.decode(encoding='ascii'))
@@ -408,37 +392,39 @@ class SMPPServer(object):
 
     def cancel_result(message_id, user_id):
         """
-        This method is responsible to cancel sending particular sms if it is not yet delivered.
+        This method is responsible to cancel sending particular scheduled sms i-e if it is not yet delivered.
         """
 
         message_id = int(message_id.decode(encoding='ascii'))
+        #This message id has been provided by user.
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, user_id=user_id).first()
         if(smses is None):
             return False
         elif(smses.status == 'delivered'):
-            return command_status.ESME_RCANCELFAIL
+            return command_status.ESME_RCANCELFAIL  # Cancellation failed because message has been delievered.
         else:
-            DBSession.delete(smses)
-            transaction.commit()
+            DBSession.delete(smses)  # Delete sms from database.
+            transaction.commit()  # Commit in database.
             return True
 
     def replace_result(message_id, message, user_id):
         """
-        This method is responsible to replace particular message which is not yet delivered.
+        This method is responsible to replace particular scheduled message i-e it is not yet delivered.
         """
 
-        message_id = int(message_id.decode(encoding='ascii'))
+        message_id = int(message_id.decode(encoding='ascii'))  # convert message if from byte to int.
         message = message.decode(encoding='ascii')
+        # User id of logged in user.
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, user_id=user_id).first()
         if(smses is None):
-            return False
+            return False  # No such sms.
         elif(smses.status == 'delievered'):
-            return(command_status.ESME_RREPLACEFAIL)
+            return(command_status.ESME_RREPLACEFAIL)  # Relacement failed because message has been delivered.
         elif(smses.status == 'scheduled'):
-            smses.schedule_delivery_time = datetime.datetime.now()
-            smses. validity_period = datetime.datetime.now()+datetime.timedelta(days=1)
-            smses.msg = message
-            transaction.commit()
+            smses.schedule_delivery_time = datetime.datetime.now()  # It has be delivered now.
+            smses. validity_period = datetime.datetime.now()+datetime.timedelta(days=1)  # Set validity period after replacement.
+            smses.msg = message  # new message body in database.
+            transaction.commit()  # Changes committed.
             return True
 
 
