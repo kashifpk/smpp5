@@ -254,9 +254,9 @@ def selected_packages(user_id):
     This method is used by server to ensure if logged in user has selected any package or not.
     """
 
-    total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()
+    total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()  # Queries for number of selected packages.
     if(total_selected_package > 0):
-        selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id)[-1]  # retrieve last selected package
+        selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id)[-1]  # Retrieve last selected package.
     else:
         selected_package = None
     if(selected_package is None):
