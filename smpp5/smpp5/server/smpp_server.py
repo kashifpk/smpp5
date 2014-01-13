@@ -251,7 +251,7 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
 
 def selected_packages(user_id):
     """
-    This method is used by server to ensure if logged in user has selected any package or not.
+    This method is used by server to ensure if logged in user has selected any package or not so thst he will be charged normally or on package rate.
     """
 
     total_selected_package = DBSession.query(Selected_package).filter_by(user_id=user_id).count()  # Queries for number of selected packages.
@@ -263,36 +263,37 @@ def selected_packages(user_id):
             package_name = None
             rates = 1.5
     else:
-        end_date = int(selected_package.end_date.strftime('%d'))
-        end_month = int(selected_package.end_date.strftime('%m'))
-        end_year = int(selected_package.end_date.strftime('%y'))
-        date = datetime.datetime.now()
-        today_date = int(date.strftime('%d'))
-        today_month = int(date.strftime('%m'))
-        today_year = int(date.strftime('%y'))
-        if(end_year > today_year and int(selected_package.smses) > 0):
+        end_date = int(selected_package.end_date.strftime('%d'))  # Get the package end date and convert to integer.
+        end_month = int(selected_package.end_date.strftime('%m'))  # Get the package end month and convert to integer.
+        end_year = int(selected_package.end_date.strftime('%y'))  # Get package end year and convert to integer.
+        date = datetime.datetime.now()  # Get today's date.
+        today_date = int(date.strftime('%d'))  # Get today's date and convert to integer.
+        today_month = int(date.strftime('%m'))  # Get current month and convert to integer.
+        today_year = int(date.strftime('%y'))  # # Get current year and convert to integer.
+        if(end_year > today_year and int(selected_package.smses) > 0):  # If package is not expired and number of sent smses are greater than zero.
+            package_name = selected_package.package_name  # Get the selected package name
+            rates = 0.0  
+            selected_package.smses = selected_package.smses-1  # Subtract 1 sms from total smses. 
+        elif(end_year == today_year and end_month > today_month and int(selected_package.smses) > 0):  # iF PACKAGE IS NOT EXPIRED.
             package_name = selected_package.package_name
             rates = 0.0
             selected_package.smses = selected_package.smses-1
-        elif(end_year == today_year and end_month > today_month and int(selected_package.smses) > 0):
-            package_name = selected_package.package_name
-            rates = 0.0
-            selected_package.smses = selected_package.smses-1
-        elif(end_month == today_month):
+        elif(end_month == today_month):  # # iF PACKAGE IS NOT EXPIRED.
             if(end_date >= today_date and int(selected_package.smses) > 0):
                 package_name = selected_package.package_name
                 rates = 0.0
                 selected_package.smses = selected_package.smses-1
-        else:
+        else:  #  Charge sms on normal rate.
             package_name = None
             rates = 1.5
-    return(dict(package_name=package_name, rates=rates))
+            
+    return(dict(package_name=package_name, rates=rates))  # Return dict
 
 
 class SMPPServer(object):
     '''
     Server class is responsible for performing database related activities as requested by client like retrieving,
-    deleting, updating database etc
+    deleting, updating database etc.
     '''
 
     def __init__(self):
