@@ -152,9 +152,9 @@ class SMPPSession(object):
 
         isempty = (self.pdus and True) or False
         if isempty is not False:  # If pdu dict is not empty
-            seq_no, pdu = self.pdus.popitem()
-            if pdu['resp'] == '':
-                P = pdu['req']
+            seq_no, pdu = self.pdus.popitem() # Pop dict key and it's value.
+            if pdu['resp'] == '':  # If pdu dict resp key is empty
+                P = pdu['req']  # Get the pdu request from dict
                 if(command_ids.bind_transmitter == P.command_id.value):
                     self.handle_bind(P)
                 elif(command_ids.bind_receiver == P.command_id.value):
@@ -236,7 +236,7 @@ class SMPPSession(object):
 
     def notifications_4_client(self):
         """
-        This method is used by the client to give count of the pending notifications
+        This method is used by the client to give count of the pending notifications.
         """
         notification = 0
         for seq_no in self.pdus:  # Parsing the dict 
@@ -246,7 +246,7 @@ class SMPPSession(object):
 
     def bind(self, bind_type, system_id, password, system_type):
         """
-        Used by the client to bind TX, RX or TRX with the server
+        Method used by the client to bind TX, RX or TRX with the server.
         """
 
         bind_types = dict(
@@ -254,18 +254,20 @@ class SMPPSession(object):
             RX=dict(request=BindReceiver, response=BindReceiverResp),
             TRX=dict(request=BindTransceiver, response=BindTransceiverResp)
         )
-        P = bind_types[bind_type]['request']()
+        
+        # Bind type pdu composition.
+        P = bind_types[bind_type]['request']()  # Call the particular class.
         P.sequence_number = Integer(self._next_seq_num(), 4)
         P.system_id = CString(system_id)
         P.password = CString(password)
         P.system_type = CString(system_type)
-        data = P.encode()
-        self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
-        self.socket.send(data)
+        data = P.encode()  # Encode pdu
+        self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})  # Append in pdu dict request key.  
+        self.socket.send(data)  # Send data to socket.
 
     def handle_bind(self, P):
         """
-        Used by the server to handle the incoming bind request
+        Used by the server to handle the incoming bind request from client, composition of response pdu.
         """
 
         print("Received PDU: " + P.__class__.__name__)
@@ -277,18 +279,18 @@ class SMPPSession(object):
         )
         #Validating the Credentials and sending response
         if(P.__class__.__name__ == BindTransmitter or BindReceiver or BindTransceiver):
-            validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)
-            if(validate == 'True'):
+            validate = self.server_validate_method(P.system_id.value, P.password.value, P.system_type.value)  # Variable called like a method is called because we don't have server instance over here.
+            if(validate == 'True'):  # If validation id done.
                 self.validation_status = 'success'
                 self.user_id = P.system_id.value.decode(encoding='ascii')
                 print("  Logged in Client is :   " + self.user_id)
-                self.state = pdu[P.__class__.__name__]['state']
-                R = pdu[P.__class__.__name__]['response']()
+                self.state = pdu[P.__class__.__name__]['state']  # Set particular state.
+                R = pdu[P.__class__.__name__]['response']()  # Call particular class in pdu module.
                 R.sequence_number = Integer(P.sequence_number.value, 4)
                 R.system_id = CString(P.system_id.value)
                 data = R.encode()
                 self.socket.send(data)
-            else:
+            else:  # Validation failed.
                 self.validation_status = 'fail'
                 R = GenericNack()
                 R.sequence_number = Integer(P.sequence_number.value, 4)
