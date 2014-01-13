@@ -147,7 +147,7 @@ def process_incoming_sms():
 
 def updating_status(sms_ids):
     """
-    This method is responsible to update status of messages from scheduled to delivered when messages are for server of
+    This method updates the status of messages from scheduled to delivered when messages are for server of
     other network.
     """
 
@@ -165,24 +165,25 @@ def process_outgoing_sms(sender, user_id, recipient):
     This method is responsible for processing outgoing smses.
     """
     if sender is not '':
-            sender_number = sender
+            sender_number = sender  # Get the sender number.
     else:
-        user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # user refers to normal user
-        sender_number = user.cell_number  # cell number of sender
-    source_prefix = sender_number[0:6]  # extract prefix of sender number
-    s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()
-    source_network = s_network.network  # refers to sender network, getting the network of source from prefixes
-    dest_prefix = recipient[0:6]  # extract prefix of recipient
-    d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()
-    dest_network = d_network.network   # refers to recipient network
-    mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()  # querying for mobile number conversion
+        user = DBSession.query(User_Number).filter_by(user_id=user_id).first()  # User refers to client.
+        sender_number = user.cell_number  # Cell number of sender
+    source_prefix = sender_number[0:6]  # Extract prefix of sender number
+    s_network = DBSession.query(Prefix_Match).filter_by(prefix=source_prefix).first()  #  Getting the network of source from prefixes.
+    source_network = s_network.network  # Refers to sender network
+    dest_prefix = recipient[0:6]  # Extract prefix of recipient
+    d_network = DBSession.query(Prefix_Match).filter_by(prefix=dest_prefix).first()  #  Getting the network of destination from prefixes.
+    dest_network = d_network.network   # Refers to recipient network
+    mnp = DBSession.query(Mnp).filter_by(cell_number=recipient).first()  # Querying for mobile number conversion
     if mnp:
         target_network = mnp.target_network
     elif(source_network == dest_network):
         target_network = dest_network
     else:
         target_network = dest_network
-    return(dict(sender_number=sender_number, source_network=source_network, target_network=target_network))
+        
+    return(dict(sender_number=sender_number, source_network=source_network, target_network=target_network))  # Returning the dict.
 
 
 def commit_db():
@@ -237,15 +238,15 @@ def connect_to_server(ip, port, system_id, password, system_type, recipient, mes
         while notification == 0:
             notification = client.session.notifications_4_client()  
         client.session.processing_recieved_pdus()
-    smses = DBSession.query(Sms).filter_by(id=int(sms_id)).first()
+    smses = DBSession.query(Sms).filter_by(id=int(sms_id)).first()  # Read sms from database that is delivered to other smpp server.
     if smses:
-        smses.status = 'delivered'
-        transaction.commit()
+        smses.status = 'delivered'  # Mark status of that message as delivered in database.
+        transaction.commit()  # Commit in database.
     client.session.unbind()
-    while client.session.state != SessionState.UNBOUND:
-        client.session.processing_recieved_pdus()
-    client.sc.close()
-    background_thread4.join()
+    while client.session.state != SessionState.UNBOUND:  # If session state is not set as unbind.
+        client.session.processing_recieved_pdus()  # Again call this method.
+    client.sc.close()  # Close the shared socket connection.
+    background_thread4.join()  # Terminate the program unless all threads finish their work.
 
 
 def selected_packages(user_id):

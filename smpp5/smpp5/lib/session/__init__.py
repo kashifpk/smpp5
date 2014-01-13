@@ -226,14 +226,12 @@ class SMPPSession(object):
                     elif(command_ids.cancel_sm_resp == R.command_id.value):
                         self.cancel_sms_response(R)
                     elif(command_ids.unbind_resp == R.command_id.value):
-                        self.state = SessionState.UNBOUND
-                    elif(command_ids.cancel_sm_resp == R.command_id.value):
-                        self.cancel_sms_response(R)
+                        self.state = SessionState.UNBOUND  # Setting the session state to unbind.
                     elif(command_ids.enquire_link_resp == R.command_id.value):
                         self.process_enquire_link_response(R)
                     elif(command_ids.unbind_resp == R.command_id.value):
                         self.unbind_response(R)
-            pdu['read'] = 'true'
+            pdu['read'] = 'true'  # Set all the messages to read state in dict because client has processed the responses sent by server.
 
     def notifications_4_client(self):
         """
@@ -327,6 +325,7 @@ class SMPPSession(object):
         self.socket.send(data)
 
     def process_enquire_link_response(self, P):
+        'Client enquires for connection state with server.'
         if (P):
             print("Connection with server exists.")
         else:
@@ -388,15 +387,15 @@ class SMPPSession(object):
 
     def send_sms_response(self, P):
         """
-        This method is responsible to process submit sm response send by server...
+        This method is responsible to process submit sms response sent by server.
         """
-        if(P.command_status.value == 0):
-            message_id = P.message_id.value.decode(encoding='ascii')
+        if(P.command_status.value == 0):  # If command status is zero means there is no error.
+            message_id = P.message_id.value.decode(encoding='ascii')  # Decode the message id
             print("Message having message id " + str(message_id) + " has been scheduled for sending.")
-        elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
-            print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length.")
-        elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
-            print("Sorry message cannot be send because Sending Sms is not allowed in this session state.")
+        elif(P.command_status.value == command_status.ESME_RINVMSGLEN):  # Id command status has error of invalid message length
+            print("Sorry message having message id " + str(message_id) + "cannot be sent due to invalid message length.")
+        elif(P.command_status.value == command_status.ESME_RINVBNDSTS):  # If command status has error of invalid bind state
+            print("Sorry message cannot be sent because Sending Sms is not allowed in this session state.")
 
     def send_multiple_sms(self, recipient, message, sender, total_recipient):
         """
@@ -454,15 +453,19 @@ class SMPPSession(object):
         self.socket.send(data)
 
     def send_multiple_sms_response(self, P):
+        """
+        This method is responsible to process multiple sms response sent by server.
+        """
+        
         if(P.command_status.value == 0):
             message_id = P.message_id.value
             message_ids = P.message_id.value.decode(encoding='ascii').splitlines()
             for i in range(len(message_ids)):
                 print("Message having message id " + str(message_ids[i]) + " has been scheduled for sending.")
         elif(P.command_status.value == command_status.ESME_RINVMSGLEN):
-            print("Sorry message having message id " + str(message_id) + "cannot be send due to invalid message length.")
+            print("Sorry message having message id " + str(message_id) + "cannot be sent due to invalid message length.")
         elif(P.command_status.value == command_status.ESME_RINVBNDSTS):
-            print("Sorry message cannot be send because Sending Sms is not allowed in this session state.")
+            print("Sorry message cannot be sent because Sending Sms is not allowed in this session state.")
 
     def query_status(self, message_id):
         """
@@ -500,18 +503,18 @@ class SMPPSession(object):
 
     def query_sms_response(self, P):
         """
-        This method is responsible to process query sm response send by server...
+        This method is responsible to process query sms response sent by server.
         """
         if(P.command_status.value == 0):
             msg_state = P.message_state.value
             if(msg_state == message_state.SCHEDULED):
-                print("Message having message id " + str(P.message_id.value) + " is secheduled and ready to deliever")
+                print("Message having message id " + str(P.message_id.value) + " is scheduled and ready to deliever.")
             elif(msg_state == message_state.DELIVERED):
-                print("Message having message id " + str(P.message_id.value) + " has been delievered to destination")
+                print("Message having message id " + str(P.message_id.value) + " has been delievered to destination.")
             elif(msg_state == message_state.EXPIRED):
-                print("Sorry,message having message id " + str(P.message_id.value) + "validity period has been expired")
+                print("Sorry,message having message id " + str(P.message_id.value) + "validity period has been expired.")
         elif(P.command_status.value == command_status.ESME_RINVMSGID):
-            print("Message having message id " + str(P.message_id.value) + " cannot be quered because provided message id is invalid")
+            print("Message having message id " + str(P.message_id.value) + " cannot be queried because provided message id is invalid.")
 
     def cancel_sms(self, message_id):
         """
@@ -547,7 +550,7 @@ class SMPPSession(object):
 
     def cancel_sms_response(self, P):
         """
-        This method is responsible to process cancel sm response send by server...
+        Client uses this method to process cancel sms response sent by server.
         """
         if(P.command_status.value == 0):
             print("Message has been cancelled successfully...")
@@ -676,14 +679,15 @@ class SMPPSession(object):
 
     def unbind(self):
         """
-        This method is used by client to send Unbind request to server....
+        Client uses this method to send unbind request to server.
         """
 
+        # If state is one of the following
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_RX, SessionState.BOUND_TRX]:
-            P = UnBind()
-            P.sequence_number = Integer(self._next_seq_num(), 4)
-            self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
-            self.socket.send(P.encode())
+            P = UnBind()  # Make the instance of this class.
+            P.sequence_number = Integer(self._next_seq_num(), 4)  # Set the sequence number.
+            self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})  # Update pdu dict set request key.
+            self.socket.send(P.encode())  # Encode the unbind pdu request. and sent to socket.
 
     def handle_unbind(self, P):
         """
@@ -699,8 +703,8 @@ class SMPPSession(object):
 
     def unbind_response(self, R):
         """
-        This method is used by client to perform action based on response of unbind request.
+        Client performs action based on response of unbind request.
         """
 
-        self.state = SessionState.UNBOUND
+        self.state = SessionState.UNBOUND  # Setting the session state to unbind.
 
