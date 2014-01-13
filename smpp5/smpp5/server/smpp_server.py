@@ -310,18 +310,18 @@ class SMPPServer(object):
         if '0.0.0.0' == host:  # translating all available ips to socket convention
             host = ''
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((host, port))  # built-in method
-        db.bind_session()
-        background_thread1 = threading.Thread(target=thread_4_incoming_sms, args=())
-        background_thread1.start()
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Creating socket.
+        self.socket.bind((host, port))  # built-in method, socket binds with server.
+        db.bind_session()  # Models bind with database engine.
+        background_thread1 = threading.Thread(target=thread_4_incoming_sms, args=())  # Thread for incoming smses processing.
+        background_thread1.start()  # Start the thread.
 
         try:
             while True:
-                self.socket.listen(1)  # listening for connections
+                self.socket.listen(1)  # Socket listening for connections.
                 print("ZONG server listening......")
-                conn, addr = self.socket.accept()  # accept connections and return ip and port
-                sc = SharedConnection(conn)
+                conn, addr = self.socket.accept()  # Socket accept connections and return ip and port.
+                sc = SharedConnection(conn)  # Make shared connection class object and pass it the socket object.
                 sc.is_open = True
 
                 P = multiprocessing.Process(target=handle_client_connection, args=(sc, addr))

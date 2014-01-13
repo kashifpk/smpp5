@@ -189,7 +189,7 @@ class SMPPSession(object):
             if(R is not None):
                 if R.command_id.value == command_ids.deliver_sm:  # If the request read from socket is that of deliver sms then call it's respective response method.
                     self.deliver_sms_response(R)  # now in variable R response pdu exists means response has been received by our server.
-                elif(self.pdus[R.sequence_number.value]):  # If there is any other response pdu on socket then match in pdus dict 
+                elif(self.pdus[R.sequence_number.value]):  # If there is any other response pdu on socket then match in pdus dict if it's request pdu exists.
                     self.comp_pdus[R.sequence_number.value] = self.pdus[R.sequence_number.value]  # Copy request pdu in comp_pdus dict
                     self.comp_pdus[R.sequence_number.value]['resp'] = R  # Store response pdu in comp_pdus dict
 
@@ -415,7 +415,7 @@ class SMPPSession(object):
             P.schedule_delivery_time = CString("")
             P.validity_period = CString("")
             P.sm_default_msg_id = Integer(0, 1)
-            if(msg_length < 255):
+            if(msg_length < 5000):
                 P.sm_length = Integer(msg_length, 1)
                 P.short_message = CString(str(message))
             else:
