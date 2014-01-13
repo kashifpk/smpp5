@@ -214,6 +214,7 @@ class SMPPSession(object):
                     elif(command_ids.bind_transceiver_resp == R.command_id.value):
                         self.bind_response_handling(R)
                 else:
+                    # Methods called according to pdu responses.
                     if(command_ids.submit_sm_resp == R.command_id.value):
                         self.send_sms_response(R)
                     elif(command_ids.submit_multi_resp == R.command_id.value):
@@ -236,7 +237,7 @@ class SMPPSession(object):
 
     def notifications_4_client(self):
         """
-        This method is used by the client to view the pending notifications
+        This method is used by the client to give count of the pending notifications
         """
         notification = 0
         for seq_no in self.pdus:  # Parsing the dict 
@@ -300,7 +301,7 @@ class SMPPSession(object):
         """
         This method is reponsible to process bind transmitter or receiver or transceiver responses sent by server.
         """
-        if(R.command_status.value == 0):  # Command status is zero means it has no error.
+        if(R.command_status.value == 0):  # Command status is zero means it has no value.
             # Setting the command status according to bind command id.
             if(R.command_id.value == command_ids.bind_transmitter_resp): 
                 self.state = SessionState.BOUND_TX
