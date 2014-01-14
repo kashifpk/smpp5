@@ -24,7 +24,7 @@ def my_view(request):
 @view_config(route_name='contact', renderer="contact.mako")
 def contact_form(request):
 
-    f = ContactForm(request.POST)   # empty form initializes if not a POST request
+    f = ContactForm(request.POST)   # Empty form initializes if not a POST request
 
     if 'POST' == request.method and 'form.submitted' in request.params:
         if f.validate():
@@ -38,34 +38,40 @@ def contact_form(request):
 
 @view_config(route_name='sms_in', renderer='sms.mako')
 def say(request):
+    '''This method is responsible to receive the sms sent via android phone to pyck server.
+    It picks the sms fields from url via post and saves it in database.
+    '''
+    
     if "POST" == request.method:
-        sms_body = request.POST['body']
-        sms_to = sms_body.splitlines()[0]
+        sms_body = request.POST['body']  # Get sms from pyck url.
+        sms_to = sms_body.splitlines()[0]  # Extract from 1st line recipient address from sms body
         if not sms_to.startswith('+'):
-            sms_to = '+92' + sms_to[1:]
-        sms_from = sms_body.splitlines()[1]
+            sms_to = '+92' + sms_to[1:]  # Prefix +92 at start of recipient address if not present
+        sms_from = sms_body.splitlines()[1]  # Extract from 2nd line sender address from sms body
         if not sms_from.startswith('+'):
             sms_from = '+92' + sms_from[1:]
         try:
-            message = sms_body.splitlines()[2]
+            message = sms_body.splitlines()[2]  # Extract from 3rd line text
         except:
             message = ''
-        #Making Instance of Sms and Saving values in db
+            
+        # Creating instance of sms model and save values in database
         S = Sms()
-        S.sms_type = 'incoming'
-        S.sms_from = sms_from
-        S.sms_to = sms_to
-        S.status = 'recieved'
+        # Fill the model fields
+        S.sms_type = 'incoming'  # Because came from mobile station
+        S.sms_from = sms_from  # Sender
+        S.sms_to = sms_to  # Recipient
+        S.status = 'recieved'  # Server has recieved sms
         S.schedule_delivery_time = datetime.date.today()
         S.validity_period = None
         S.msg = message
-        S.user_id = None
+        S.user_id = None  # Because we don't know it is for which client
         S.timestamp = datetime.datetime.now()
         S.msg_type = 'text'
         S.rates = 0.0
-        S.target_network = None
-        S.client_type = 'mobile'
-        DBSession.add(S)
+        S.target_network = None  # Because yet prefix is not seen
+        S.client_type = 'mobile'  # Sent from mobile station
+        DBSession.add(S)  # Add record to database
         return{}
 
 
