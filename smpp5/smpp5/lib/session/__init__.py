@@ -133,7 +133,7 @@ class SMPPSession(object):
     def process_request(self):
         """
         Server background thread uses this method to receive requests or response pdus sent by client
-        over the socket.
+        over the socket and stores in dict.
         """
 
         while self.socket.is_open is True:
@@ -192,7 +192,7 @@ class SMPPSession(object):
             if(R is not None):
                 if R.command_id.value == command_ids.deliver_sm:  # If the request read from socket is that of deliver sms then call it's respective response method.
                     self.deliver_sms_response(R)  # now in variable R response pdu exists means response has been received by our server.
-                elif(self.pdus[R.sequence_number.value]):  # If there is any other response pdu on socket then match in pdus dict if it's request pdu exists.
+                elif(self.pdus[R.sequence_number.value]):  # If there is any other response pdu on socket and in pdu dict having same sequence number.
                     self.comp_pdus[R.sequence_number.value] = self.pdus[R.sequence_number.value]  # Copy request pdu in comp_pdus dict
                     self.comp_pdus[R.sequence_number.value]['resp'] = R  # Store response pdu in comp_pdus dict
 
@@ -234,8 +234,9 @@ class SMPPSession(object):
                         self.process_enquire_link_response(R)
                     elif(command_ids.unbind_resp == R.command_id.value):
                         self.unbind_response(R)
-            pdu['read'] = 'true'  # Set all the messages to read state in dict because client has processed the responses sent by server.
-
+                        
+            pdu['read'] = 'true'  # Set all the messages to read state in dict because client has enquired the status for the processesd responses sent by server.
+    
     def notifications_4_client(self):
         """
         This method is used by the client to give count of the pending notifications.
