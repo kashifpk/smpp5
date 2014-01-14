@@ -75,6 +75,7 @@ class SessionState(object):
 
 
 class SMPPSession(object):
+    'This class maintains the common states of session between client and server.'
 
     # In dict lists are defined. Against these states these actions are allowed.
     allowed_actions = {
