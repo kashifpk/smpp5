@@ -198,7 +198,7 @@ class SMPPSession(object):
 
     def processing_recieved_pdus(self):
         """
-        Client uses this method to process pdu responses by calling appropriate method.
+        Client uses this method to enquire the status of processed pdu responses sent by server by calling appropriate method and stores resp in dict.
         """
         isempty = (self.comp_pdus and True) or False  # Check of comp pdu dict is empty or not.
         if isempty is not False: # If comp pdu dict is not empty.
