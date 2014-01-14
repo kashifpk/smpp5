@@ -77,7 +77,7 @@ def say(request):
 
 @view_config(route_name='main_page', renderer='main_page.mako')
 def mainpage(request):
-    user = request.session['logged_in_user']
+    user = request.session['logged_in_user']  # Open page for logged in user 
     return{'user': user}
 
 
@@ -86,7 +86,7 @@ def sms_history(request):
     user = request.session['logged_in_user']
     if "POST" == request.method:
         user = request.POST['user_id']
-    smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
+    smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()  # Query all delivered sms for logged in user
     return{'smses': smses}
 
 
