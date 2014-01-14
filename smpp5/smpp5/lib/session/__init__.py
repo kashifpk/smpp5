@@ -76,7 +76,7 @@ class SessionState(object):
 
 class SMPPSession(object):
 
-    # Against these states these actions are allowed.
+    # In dict lists are defined. Against these states these actions are allowed.
     allowed_actions = {
         'submit_sm': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
         'submit_multi': [SessionState.BOUND_TRX, SessionState.BOUND_TX],
@@ -322,13 +322,16 @@ class SMPPSession(object):
         self.socket.send(data)
 
     def enquire_link_response(self, P):
+        'Server sends this response'
+        
         R = EnquireLinkResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
         data = R.encode()
         self.socket.send(data)
 
     def process_enquire_link_response(self, P):
-        'Client enquires for connection state with server.'
+        'Client enquires for connection state with server. It is just to disaplay after receiving.'
+        
         if (P):
             print("Connection with server exists.")
         else:
@@ -365,22 +368,22 @@ class SMPPSession(object):
 
     def process_sms(self, P):
         """
-        This method is responsible for handling the request sent by client and sending the response pdu to the client
-        for successfull submission
+        In this method server is responsible for handling the request sent by client and sending the response pdu to the client
+        for successful submission. Compose response pdu. Store in db. 
         """
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
             R = SubmitSmResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
-            if(P.sm_length.value > 255):
+            if(P.sm_length.value > 5000):
                 R.command_status = Integer(command_status.ESME_RINVMSGLEN, 4)
             else:
                 if(P.short_message.value):
                     message = P.short_message.value.decode(encoding='ascii')
                 else:
                     message = P.message_payload.value.value
-                db_storage = self.server_db_store(P.destination_addr.value, message, self.user_id, P.source_addr.value)
-            # in db_storage the message id of sms is returned
-                R.message_id = CString(str(db_storage))
+                sms_id = self.server_db_store(P.destination_addr.value, message, self.user_id, P.source_addr.value)
+            # in sms_id the message id of sms is returned
+                R.message_id = CString(str(sms_id))
         else:
             R = SubmitSmResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -390,7 +393,7 @@ class SMPPSession(object):
 
     def send_sms_response(self, P):
         """
-        This method is responsible to process submit sms response sent by server.
+        In this method client is responsible to process submit sms response sent by server.
         """
         if(P.command_status.value == 0):  # If command status is zero means there is no error.
             message_id = P.message_id.value.decode(encoding='ascii')  # Decode the message id
@@ -402,7 +405,7 @@ class SMPPSession(object):
 
     def send_multiple_sms(self, recipient, message, sender, total_recipient):
         """
-        This method is responsible for taking the Sumbit short message request send by client and writes it to
+        In This method client is responsible for sending submit sms request and writes it to
         the socket to be read by server.
         """
         try:
@@ -413,8 +416,8 @@ class SMPPSession(object):
             P.sequence_number = Integer(self._next_seq_num(), 4)
             if sender:
                 P.source_addr = CString(sender)
-            P.number_of_dests = Integer(total_recipient, 1)
-            P.destination_addr = CString(recipient)
+            P.number_of_dests = Integer(total_recipient, 1)  # total recipients
+            P.destination_addr = CString(recipient)  # Variable recipients in which by the distinction of \n
             P.schedule_delivery_time = CString("")
             P.validity_period = CString("")
             P.sm_default_msg_id = Integer(0, 1)
@@ -424,7 +427,7 @@ class SMPPSession(object):
             else:
                 P.message_payload = TLV(tlv_tag.message_payload, message)
             data = P.encode()
-        #storing pdu in dictionary named responses
+        # storing pdu in dictionary named responses
             self.pdus.update({P.sequence_number.value: {'req': P, 'resp': '', 'read': 'false'}})
             self.socket.send(data)
         except InvalidSessionState as e:
@@ -432,22 +435,22 @@ class SMPPSession(object):
 
     def process_multiple_sms(self, P):
         """
-        This method is responsible for handling the request sent by client and sending the response pdu to the client
-        for successfull submission
+        In This method server is responsible for handling the request sent by client and sending the response pdu to the client
+        for successfull submission, compose resp pdu for that if processing required does it e.g save something in db.
         """
         if self.state in [SessionState.BOUND_TX, SessionState.BOUND_TRX]:
             R = SubmitMultiResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
-            if(P.sm_length.value > 255):
+            if(P.sm_length.value > 5000):
                 R.command_status = Integer(command_status.ESME_RINVMSGLEN, 4)
             else:
                 if(P.short_message.value):
                     message = P.short_message.value.decode(encoding='ascii')
                 else:
                     message = P.message_payload.value.value
-                db_storage = self.server_db_store(P.destination_addr.value, message, self.user_id, P.source_addr.value)
-            # in db_storage the message id of sms is returned
-                R.message_id = CString(str(db_storage))
+                sms_id = self.server_db_store(P.destination_addr.value, message, self.user_id, P.source_addr.value)
+            # in sms_id the message id of sms is returned
+                R.message_id = CString(str(sms_id))
         else:
             R = SubmitSmResp()
             R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -457,7 +460,7 @@ class SMPPSession(object):
 
     def send_multiple_sms_response(self, P):
         """
-        This method is responsible to process multiple sms response sent by server.
+        In This method client is responsible to process multiple sms response sent by server.
         """
         
         if(P.command_status.value == 0):
@@ -472,7 +475,7 @@ class SMPPSession(object):
 
     def query_status(self, message_id):
         """
-        This method is responsible for querying the status of message that either it is delievered or still
+        In This method client is responsible for querying the status of message that either it is delievered or still
         scheduled
         """
         try:
@@ -490,7 +493,7 @@ class SMPPSession(object):
 
     def process_query(self, P):
         """
-        This message is responsible for handling querying request and returning status of message
+        In This message server is responsible for handling querying request and returning status of message
         """
         R = QuerySmResp()
         R.sequence_number = Integer(P.sequence_number.value, 4)
@@ -506,7 +509,7 @@ class SMPPSession(object):
 
     def query_sms_response(self, P):
         """
-        This method is responsible to process query sms response sent by server.
+        In This method client is responsible to process query sms response sent by server.
         """
         if(P.command_status.value == 0):
             msg_state = P.message_state.value
@@ -521,7 +524,7 @@ class SMPPSession(object):
 
     def cancel_sms(self, message_id):
         """
-        This method is responsible for requesting the cancelling of particular message
+        In This method client is responsible for requesting the cancelling of particular message
         """
         try:
             if not self._can_do('query_sm'):
@@ -539,7 +542,7 @@ class SMPPSession(object):
 
     def process_sms_cancelling(self, P):
         """
-        This method is responsible for handling cancel request and cancels the message if it is not yet delivered
+        In This method server is responsible for handling cancel request and cancels the message if it is not yet delivered
         """
         cancel_result = self.server_cancel_result(P.message_id.value, self.user_id)
         R = CancelSmResp()
@@ -553,7 +556,7 @@ class SMPPSession(object):
 
     def cancel_sms_response(self, P):
         """
-        Client uses this method to process cancel sms response sent by server.
+        Client uses this method to enquire cancel sms response sent by server.
         """
         if(P.command_status.value == 0):
             print("Message has been cancelled successfully...")
@@ -564,7 +567,7 @@ class SMPPSession(object):
 
     def replace_sms(self, message_id, message):
         """
-        This method is responsible for requesting the replacing of particular short message.
+        In This method client is responsible for requesting the replacing of particular short message.
         """
         try:
             if not self._can_do('replace_sm'):
@@ -586,7 +589,7 @@ class SMPPSession(object):
 
     def process_replace_sms(self, P):
         """
-        This method is responsible for handling replacing request and replace short message if it is not
+        In This method server is responsible for handling replacing request and replace short message if it is not
         yet delivered.
         """
         R = ReplaceSmResp()
@@ -604,18 +607,19 @@ class SMPPSession(object):
 
     def replace_sms_response(self, P):
         """
-        This method is responsible to process replace sm response send by server...
+        In This method client is responsible to enquire replace sms response sent by server.
         """
         if(P.command_status.value == 0):
             print("Message has been replaced successfully...")
         elif(P.command_status.value == command_status.ESME_RINVMSGID):
             print("Message cannot be replaced because provided message id is invalid")
         elif(P.command_status.value == command_status.ESME_RREPLACEFAIL):
-            print("Message cannot be replaced because message has been already delievered")
+            print("Message cannot be replaced because message has been already delivered")
 
     def deliver_sms(self):
         """
-        This method is used by server to deliver the incoming smses if any to currently logged in client.
+        This method is used by the server to deliver the incoming smses if any to currently logged in client.
+        , compose deliver sms pdu
         """
 
         try:
@@ -668,7 +672,7 @@ class SMPPSession(object):
         if self.state in [SessionState.BOUND_RX, SessionState.BOUND_TRX]:
             isempty = (self.smses and True) or False
             if isempty is False:
-                print("Sorry, No Unread Smses For You........")
+                print("No Unread Smses For You....")
             else:
                 while isempty is True:
                     seq_no, pdu = self.smses.popitem()
@@ -678,7 +682,7 @@ class SMPPSession(object):
                     print("   Sms      :" + str(P.short_message.value))
                     isempty = (self.smses and True) or False
         else:
-            print("SMPP Session not in a state that allows you to view SMSes")
+            print("SMPP Session not in such bind state that allows you to view SMSes.")
 
     def unbind(self):
         """
