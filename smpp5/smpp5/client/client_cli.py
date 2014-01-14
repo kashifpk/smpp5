@@ -14,8 +14,8 @@ def ui_loop(client):
     while True:
         print("\n********************** MAIN MENU **********************************")
         print()
-        notification = client.session.notifications_4_client()
-        if(notification == 0):
+        notification = client.session.notifications_4_client()  # This method is called to get the count of notifications for client.
+        if(notification == 0):  # If there are no notifications
             pass
         else:
             print("*** You have pending  notifications...Press 6 to view them....")
@@ -27,48 +27,48 @@ def ui_loop(client):
         print("Press 6 to view pending notifications")
         print("Press 7 to check connectivity with server")
         print("Press 8 to exit")
-        option = int(input())
+        option = int(input())  # Take the input option and convert it to integer
         if(option == 1):
             print("\nPress 1 to send message to single destination.")
-            print("Press 2 to send message to multiple destinations.")
-            op = int(input())
+            print("  Press 2 to send message to multiple destinations.")
+            op = int(input())  # Take the input option and convert it to integer
             if op == 1:
-                recipient = input("Enter the Recipient                ")
+                recipient = input("Enter the Recipient address                ")
                 message = input("Enter the Short Message to send      ")
                 if not recipient.startswith('+'):
-                    recipient = '+92' + recipient[1:]
-                client.session.send_sms(recipient, message, None)
+                    recipient = '+92' + recipient[1:]  # Place prefix of +92 and take the number from 2nd character
+                client.session.send_sms(recipient, message, None)  # Call the send sms method in session
 
             elif op == 2:
                 recipients = ''
                 recipient = ''
                 total_recipient = 0
                 while True:
-                    recipients = input("Enter the Recipient..Type quit if no more destinations to enter   ")
-                    if recipients.lower() == 'quit':
+                    recipients = input("Enter the Recipient address. Type q if there are no more destinations to enter   ")
+                    if recipients.lower() == 'q':
                         break
                     if not recipients.startswith('+'):
                         recipients = '+92' + recipients[1:]
-                    recipient = recipient + recipients + '\n'
-                    total_recipient = total_recipient + 1
+                    recipient = recipient + recipients + '\n'  # Append the new recipient with the separation of \n
+                    total_recipient = total_recipient + 1 # Add total recipients 
 
-                message = input("Enter the Short Message to send                                          ")
-                client.session.send_multiple_sms(recipient, message, None, total_recipient)
+                message = input("Enter the Short Message to send:  ")
+                client.session.send_multiple_sms(recipient, message, None, total_recipient)  # Call the send multiple sms method
 
             else:
                 print("Invalid option")
 
         elif(option == 2):
-            message_id = input("Enter the Message Id of Message whom Status is required    ")
+            message_id = input("Enter the Message Id of Message whose Status is required:  ")
             client.session.query_status(message_id)
 
         elif(option == 3):
-            message_id = system_id = input("Enter the Message Id of Message whom you want to cancel    ")
+            message_id = system_id = input("Enter the Message Id of Message which you want to cancel:  ")
             client.session.cancel_sms(message_id)
 
         elif(option == 4):
-            message_id = input("Enter the Message Id of Message whom you want to replace    ")
-            message = input("Enter the Short Message to replace previous sumbitted short message      ")
+            message_id = input("Enter the Message Id of Message which you want to replace:  ")
+            message = input("Enter the Short Message to replace previous sumbitted short message:      ")
             client.session.replace_sms(message_id, message)
 
         elif(option == 5):
@@ -81,7 +81,7 @@ def ui_loop(client):
         elif(option == 6):
             count = client.session.notifications_4_client()
             if(count == 0):
-                print("You have no any pending notification...")
+                print("You have no pending notifications.")
             else:
                 while count > 0:
                     client.session.processing_recieved_pdus()
@@ -110,8 +110,8 @@ def ui_loop(client):
 def get_connect_info():
         ret = dict(ip=None, port=None, bind_type=None,
                    system_id=None, password=None, system_type=None)
-        ret['ip'] = input("Enter the server IP to connect\t\t\t")
-        ret['port'] = int(input("Enter the server PORT to connect\t\t"))
+        ret['ip'] = input("Enter the server IP to connect:\t\t")
+        ret['port'] = int(input("Enter the server PORT to connect:\t"))
 
         print("**** Select Bind Type ****")
         bind_types = ['TX', 'RX', 'TRX']
@@ -124,9 +124,9 @@ def get_connect_info():
             print("Invalid Option")
             return False
 
-        ret['system_id'] = input("Enter the System Id        ")
-        ret['password'] = input("Enter the Password        ")
-        ret['system_type'] = input("Enter the System Type     ")
+        ret['system_id'] = input("Enter the System Id:        ")
+        ret['password'] = input("Enter the Password:        ")
+        ret['system_type'] = input("Enter the System Type:     ")
 
         return ret
 
@@ -139,16 +139,16 @@ if __name__ == '__main__':
                         conn_info['system_id'], conn_info['password'], conn_info['system_type'])
 
     if client.connect():
-        print("Connection established successfully\n")
-        background_thread = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # to recieve response from server
+        print("Connection established successfully.\n")
+        background_thread = threading.Thread(target=client.session.storing_recieved_pdus, args=())  # Client background thread to recieve response from server
         background_thread.start()
     else:
         print("Connection Refused...Try Again\n")
         sys.exit()
 
     if client.login():
-        print("Login successful\n")
-        ui_loop(client)  # to check if ui_loop method is functioning correct
+        print("Login successful.\n")
+        ui_loop(client)  # To check if ui_loop method is functioning properly
         background_thread.join()
     else:
         print("Login Failed")
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         background_thread.join()
         sys.exit()
 
-    # if here then login was successful, now create a background thread for handling traffic from server
+    # if here login was successful, now create a background thread for handling traffic from server
     # and run UI loop in the main process/thread for user interaction
 
     # Notes on background thread: It can either wait till there is data (blocking) or check if there is data

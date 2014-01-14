@@ -131,7 +131,7 @@ class SMPPSession(object):
         self._seq_num += 1
         return self._seq_num
 
-    def process_request(self):
+    def process_bind_request(self):
         """
         Server background thread uses this method to receive requests or response pdus sent by client
         over the socket and stores in dict.
