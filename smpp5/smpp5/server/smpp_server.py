@@ -339,23 +339,23 @@ class SMPPServer(object):
         """
         This method is responsible to store Sms and related fields provided by the client in the database.
         """
-
-        sms_ids = ''    # Contains all message ids that are sent by client to recipient of same or different network.
+        
+        # Contains all message ids that are sent by client to recipient of same or different network.
+        sms_ids = ''    
         sender = sender.decode(encoding='ascii')
-        recipients = recipients.decode(encoding='ascii').splitlines()  # Alist is made.
+        recipients = recipients.decode(encoding='ascii').splitlines()  # A list is made.
         selected_package = selected_packages(user_id)
         for recipient in recipients:
             processed_fields = process_outgoing_sms(sender, user_id, recipient)  # Dict returns in proccessed fields.
 
         # Storing vaues to database
 
-            S = Sms()
+            S = Sms()  # Make instance of sms class 
             S.sms_type = 'outgoing'
             S.sms_from = processed_fields['sender_number']
             S.sms_to = recipient
-            S.schedule_delivery_time = datetime.date.today()
-            S.validity_period = datetime.date.today()+datetime.timedelta(days=1)
-            S.msg = message
+            S.schedule_delivery_time = datetime.date.today()  # It should be delivered now
+            S.validity_period = datetime.date.today()+datetime.timedelta(days=1)  # It is of one day
             S.timestamp = datetime.date.today()
             S.status = 'scheduled'
             S.msg_type = 'text'
@@ -368,9 +368,9 @@ class SMPPServer(object):
             transaction.commit()
             sms = DBSession.query(Sms)[-1]  # Picks last record to send id to the client for ancilliary operations and querying.
             sms_ids = sms_ids + str(sms.id) + '\n'  # Server stores all sms ids. Server will notify client about the sms id of the message sent by client.
-            if processed_fields['target_network'] != processed_fields['source_network']:  # if destination and source network is different 
+            if processed_fields['target_network'] != processed_fields['source_network']:  # If destination and source network is different 
                 connect_info(recipient, message, processed_fields['target_network'], sms.id,
-                             processed_fields['sender_number'])  # connect to the destination's smpp server.
+                             processed_fields['sender_number'])  # Connect to the destination's smpp server.
                
         return(sms_ids)
 
@@ -380,7 +380,7 @@ class SMPPServer(object):
         """
 
         message_id = int(message_id.decode(encoding='ascii'))
-        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, user_id=user_id).first()  #check for all outgoing sms
+        smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, user_id=user_id).first()  # Check for all outgoing sms
         if(smses is None):
             return(command_status.ESME_RINVMSGID)
         elif(smses.status == 'scheduled' and smses.validity_period >= datetime.datetime.now()):
@@ -396,7 +396,7 @@ class SMPPServer(object):
         """
 
         message_id = int(message_id.decode(encoding='ascii'))
-        #This message id has been provided by user.
+        # This message id has been provided by user.
         smses = DBSession.query(Sms).filter_by(sms_type='outgoing', id=message_id, user_id=user_id).first()
         if(smses is None):
             return False
@@ -423,7 +423,7 @@ class SMPPServer(object):
         elif(smses.status == 'scheduled'):
             smses.schedule_delivery_time = datetime.datetime.now()  # It has be delivered now.
             smses. validity_period = datetime.datetime.now()+datetime.timedelta(days=1)  # Set validity period after replacement.
-            smses.msg = message  # new message body in database.
+            smses.msg = message  # New message body in database.
             transaction.commit()  # Changes committed.
             return True
 
