@@ -65,7 +65,10 @@ p {color:#369;}
         <center>Your Package has been expired or there are not remaining sms.. </center>
         <center>Resubscribe the package <a href= ${request.route_url('select_packages')}>here</a></center>
     % elif end_month==today_month:
-        % if end_date > today_date and int(selected_package.smses) > 0:
+        % if end_date > today_date and int(selected_package.smses) == 0:
+            <center>Your Package has been expired or there are not remaining sms.. </center>
+            <center>Resubscribe the package <a href= ${request.route_url('select_packages')}>here</a></center>
+        % elif end_date < today_date and int(selected_package.smses) > 0:
             <center>Your Package has been expired or there are not remaining sms.. </center>
             <center>Resubscribe the package <a href= ${request.route_url('select_packages')}>here</a></center>
         % elif end_date < today_date and int(selected_package.smses) == 0:

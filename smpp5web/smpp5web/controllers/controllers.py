@@ -38,41 +38,48 @@ def contact_form(request):
 
 @view_config(route_name='sms_in', renderer='sms.mako')
 def say(request):
-    '''This method is responsible to receive the sms sent via android phone to pyck server.
-    It picks the sms fields from url via post and saves it in database.
-    '''
-    
     if "POST" == request.method:
-        sms_body = request.POST['body']  # Get sms from pyck url.
-        sms_to = sms_body.splitlines()[0]  # Extract from 1st line recipient address from sms body
-        if not sms_to.startswith('+'):
-            sms_to = '+92' + sms_to[1:]  # Prefix +92 at start of recipient address if not present
-        sms_from = sms_body.splitlines()[1]  # Extract from 2nd line sender address from sms body
-        if not sms_from.startswith('+'):
-            sms_from = '+92' + sms_from[1:]
         try:
-            message = sms_body.splitlines()[2]  # Extract from 3rd line text
+            sms_body = request.POST['body']
+            sms_to = sms_body.splitlines()[0]
+            if sms_to.isdigit() is True:
+                if not sms_to.startswith('+'):
+                    sms_to = '+92' + sms_to[1:]
+            else:
+                sms_to = ''
+            sms_from = sms_body.splitlines()[1]
+            if sms_from.isdigit() is True:
+                if not sms_from.startswith('+'):
+                    sms_from = '+92' + sms_from[1:]
+            else:
+                sms_from = ''
+            try:
+                message = ''
+                messages = sms_body.splitlines()[2:]
+                for m in messages:
+                    message = message + m + "\n"
+            except:
+                messages = ''
+            #Making Instance of Sms and Saving values in db
+            if sms_to != '' and sms_from != '' and messages != '':
+                S = Sms()
+                S.sms_type = 'incoming'
+                S.sms_from = sms_from
+                S.sms_to = sms_to
+                S.status = 'recieved'
+                S.schedule_delivery_time = datetime.date.today()
+                S.validity_period = None
+                S.msg = message
+                S.user_id = None
+                S.timestamp = datetime.datetime.now()
+                S.msg_type = 'text'
+                S.rates = 0.0
+                S.target_network = None
+                S.client_type = 'mobile'
+                DBSession.add(S)
+                return{}
         except:
-            message = ''
-            
-        # Creating instance of sms model and save values in database
-        S = Sms()
-        # Fill the model fields
-        S.sms_type = 'incoming'  # Because came from mobile station
-        S.sms_from = sms_from  # Sender
-        S.sms_to = sms_to  # Recipient
-        S.status = 'recieved'  # Server has recieved sms
-        S.schedule_delivery_time = datetime.date.today()
-        S.validity_period = None
-        S.msg = message
-        S.user_id = None  # Because we don't know it is for which client
-        S.timestamp = datetime.datetime.now()
-        S.msg_type = 'text'
-        S.rates = 0.0
-        S.target_network = None  # Because yet prefix is not seen
-        S.client_type = 'mobile'  # Sent from mobile station
-        DBSession.add(S)  # Add record to database
-        return{}
+            return{}
 
 
 @view_config(route_name='main_page', renderer='main_page.mako')
@@ -94,23 +101,31 @@ def sms_history(request):
 def admin_sms_history(request):
     if "POST" == request.method:
         user = request.POST['user_id']
-        smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
+        smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()  # Query smses of the user selected by admin
         return{'smses': smses}
 
 
 @view_config(route_name='billing', renderer='billing.mako')
-def billing(request):
+def billing(request): 
+    'Calculate the billing information for the user.'
+    
     user = request.session['logged_in_user']
     package_rates = 0.0
     smses_rates = 0.0
-    selected_packages = DBSession.query(Selected_package).filter_by(user_id=user).all()
+    selected_packages = DBSession.query(Selected_package).filter_by(user_id=user).all()  # Query the package selected by user
+    # Calculate rates if user has selected some package
     if(selected_packages):
         for p in selected_packages:
             package_rates = package_rates+p.rates
+            
+    #  Query from sms table fetch the records
+    # Calculate rates if no package has been selected
     smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing', status='delivered').all()
     if(smses):
         for s in smses:
             smses_rates = smses_rates+s.rates
+    
+    # Calculate total bill i-e package and sms rates
     total_bill = package_rates+smses_rates
 
     return{'smses': smses, 'package_rates': package_rates, 'smses_rates': smses_rates, 'total_bill': total_bill}

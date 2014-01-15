@@ -431,5 +431,5 @@ class SMPPServer(object):
 if __name__ == '__main__':
     #testing server
     S = SMPPServer()
-    S.start_serving('127.0.0.1', 1337)
+    S.start_serving('192.168.5.34', 1337)
 
