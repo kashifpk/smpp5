@@ -1,5 +1,5 @@
 '''This background process is responsible for reading the outgoing smses from database sent by client
-and post them to the url on bottle server.
+and post them to the url on bottle server
 '''
 import urllib2
 import urllib
@@ -26,7 +26,7 @@ try:
                 # POST is used instead of GET request type
                 result = urllib2.urlopen("http://192.168.5.34:50111/" + 'sendsms', post_str).read()
                 S.status = 'delivered'
-                S.timestamp = datetime.date.now()
+                S.timestamp = datetime.date.today()
                 print(result)
         transaction.commit()
         time.sleep(2)

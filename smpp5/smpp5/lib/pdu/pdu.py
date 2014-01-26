@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 
 class OrderedMeta(type):
-    '''OrderedDict tracks the insertion order dictionary keys are not in order, it stores dict keys in order.'''
+    '''OrderedDict tracks the insertion order'''
     @classmethod
     def __prepare__(metacls, name, bases):
         return OrderedDict()                # returns OrderedDict in the order of insertion

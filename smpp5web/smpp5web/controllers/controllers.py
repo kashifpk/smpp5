@@ -24,7 +24,7 @@ def my_view(request):
 @view_config(route_name='contact', renderer="contact.mako")
 def contact_form(request):
 
-    f = ContactForm(request.POST)   # Empty form initializes if not a POST request
+    f = ContactForm(request.POST)   # empty form initializes if not a POST request
 
     if 'POST' == request.method and 'form.submitted' in request.params:
         if f.validate():
@@ -71,7 +71,7 @@ def say(request):
                 S.validity_period = None
                 S.msg = message
                 S.user_id = None
-                S.timestamp = datetime.datetime.now()
+                S.timestamp = datetime.date.today()
                 S.msg_type = 'text'
                 S.rates = 0.0
                 S.target_network = None
@@ -84,7 +84,7 @@ def say(request):
 
 @view_config(route_name='main_page', renderer='main_page.mako')
 def mainpage(request):
-    user = request.session['logged_in_user']  # Open page for logged in user 
+    user = request.session['logged_in_user']
     return{'user': user}
 
 
@@ -93,7 +93,7 @@ def sms_history(request):
     user = request.session['logged_in_user']
     if "POST" == request.method:
         user = request.POST['user_id']
-    smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()  # Query all delivered sms for logged in user
+    smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
     return{'smses': smses}
 
 
@@ -101,31 +101,23 @@ def sms_history(request):
 def admin_sms_history(request):
     if "POST" == request.method:
         user = request.POST['user_id']
-        smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()  # Query smses of the user selected by admin
+        smses = DBSession.query(Sms).filter_by(user_id=user, status='delivered').all()
         return{'smses': smses}
 
 
 @view_config(route_name='billing', renderer='billing.mako')
-def billing(request): 
-    'Calculate the billing information for the user.'
-    
+def billing(request):
     user = request.session['logged_in_user']
     package_rates = 0.0
     smses_rates = 0.0
-    selected_packages = DBSession.query(Selected_package).filter_by(user_id=user).all()  # Query the package selected by user
-    # Calculate rates if user has selected some package
+    selected_packages = DBSession.query(Selected_package).filter_by(user_id=user).all()
     if(selected_packages):
         for p in selected_packages:
             package_rates = package_rates+p.rates
-            
-    #  Query from sms table fetch the records
-    # Calculate rates if no package has been selected
     smses = DBSession.query(Sms).filter_by(user_id=user, sms_type='outgoing', status='delivered').all()
     if(smses):
         for s in smses:
             smses_rates = smses_rates+s.rates
-    
-    # Calculate total bill i-e package and sms rates
     total_bill = package_rates+smses_rates
 
     return{'smses': smses, 'package_rates': package_rates, 'smses_rates': smses_rates, 'total_bill': total_bill}
@@ -192,7 +184,7 @@ def usermonthlygraph(request):
         month = request.POST['month']
         sms = []
         date = []
-        currentmonth = strptime(month[0:3], '%b').tm_mon
+        currentmonth = strptime(month[0:3], '%b').tm_mon  # get month number
         month_name = request.POST['month']
         smses = DBSession.query(Sms.timestamp, func.count(Sms.sms_type)).group_by(Sms.timestamp).filter_by(sms_type='outgoing', status='delivered').filter(func.MONTH(Sms.timestamp) == currentmonth).all()
         for row in range(len(smses)):

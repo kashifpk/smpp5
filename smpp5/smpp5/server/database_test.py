@@ -14,7 +14,7 @@ import datetime
 
 if '__main__' == __name__:
     db.bind_session()
-    d = datetime.date.today()
+    d = datetime.date.today()-datetime.timedelta(days=4)
     S = Sms()
     S.sms_type = 'outgoing'
     S.sms_from = '+9233365195924'
@@ -26,7 +26,7 @@ if '__main__' == __name__:
     S.status = 'delivered'
     S.msg_type = 'text'
     S.user_id = 'ASMA'
-    S.package_name = 'iyashi'
+    S.package_name = 'dhamaka'
     S.rates = 0.0
     S.target_network = 'ufone'  # process sms file would use it to send to respective network of which server is.
     S.client_type = 'smpp'

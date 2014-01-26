@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Numbering Plan Indicator ('NPI', 2) - SMPP v5.0, section 4.7.2, table 4-43, page 113
+# Numberic Plan Indicator ('NPI', 2) - SMPP v5.0, section 4.7.2, table 4-43, page 113
 
 UNKNOWN = int('00000000', 2)
 ISDN = int('00000001', 2)
